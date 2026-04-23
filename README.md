@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🏏 Cricket Momentum Prediction System
 
 Predict momentum shifts across Test cricket sessions using ball-by-ball data.
@@ -66,3 +67,7 @@ python main.py
 # Re-run charts without re-loading data
 python main.py --charts-only
 ```
+=======
+# cricket-session-prediction
+Session Based Momentum Prediction in Test Cricket 
+>>>>>>> 7cc445b593034913077392cc22537e063f1d972f
