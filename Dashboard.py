@@ -1,13 +1,3 @@
-"""
-=============================================================================
-SESSION-BASED MOMENTUM PREDICTION IN TEST CRICKET
-Streamlit Dashboard — Match Explorer + Live Prediction
-=============================================================================
-Author      : [Your Name] — Master's Thesis
-Run with    : streamlit run dashboard.py
-=============================================================================
-"""
-
 import os
 import sys
 import joblib
@@ -22,7 +12,7 @@ from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
-# ── Path setup ────────────────────────────────────────────────────────────
+# Path setup
 BASE_DIR    = Path(__file__).parent
 OUTPUT_DIR  = BASE_DIR / "outputs"
 MODEL_DIR   = OUTPUT_DIR / "models"
@@ -30,7 +20,7 @@ SESSION_CSV = OUTPUT_DIR / "session_features.csv"
 MATCH_CSV   = OUTPUT_DIR / "match_level_features.csv"
 sys.path.insert(0, str(BASE_DIR / "src"))
 
-# ── Color palette (clean academic) ───────────────────────────────────────
+# Color palette (clean academic)
 C_PRIMARY   = "#1B4F72"   # Deep navy
 C_BATTING   = "#1E8449"   # Cricket green
 C_BOWLING   = "#C0392B"   # Alert red
@@ -50,9 +40,7 @@ SESSION_FEATURES = [
     "is_evening_session", "top_order_exposed",
 ]
 
-# =============================================================================
 # PAGE CONFIG
-# =============================================================================
 
 st.set_page_config(
     page_title="Cricket Momentum Predictor",
@@ -61,7 +49,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Global CSS ────────────────────────────────────────────────────────────
+#Global CSS
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
@@ -150,28 +138,94 @@ st.markdown("""
         background: white;
         border-right: 1px solid #E8E8E8;
     }
+
+    /* ── Loading spinner overlay ──────────────────────────────────────── */
+    .loading-overlay {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        background: #EBF5FB;
+        border: 1px solid #AED6F1;
+        border-radius: 10px;
+        padding: 1rem 1.4rem;
+        font-size: 0.9rem;
+        color: #1B4F72;
+        margin: 0.5rem 0 1rem 0;
+    }
+    .spinner {
+        width: 20px; height: 20px;
+        border: 3px solid #AED6F1;
+        border-top-color: #1B4F72;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Skeleton shimmer cards ───────────────────────────────────────── */
+    .skeleton-card {
+        background: white;
+        border: 1px solid #E8E8E8;
+        border-radius: 10px;
+        padding: 1.2rem 1.5rem;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        overflow: hidden;
+        position: relative;
+    }
+    .skeleton-line {
+        height: 14px;
+        border-radius: 6px;
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+        margin-bottom: 10px;
+    }
+    .skeleton-line.tall  { height: 36px; width: 60%; }
+    .skeleton-line.short { width: 50%; }
+    .skeleton-line.full  { width: 100%; }
+    @keyframes shimmer {
+        0%   { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    /* ── Responsive: stack columns on narrow screens ──────────────────── */
+    @media (max-width: 768px) {
+        .main-header h1 { font-size: 1.35rem; }
+        .main-header p  { font-size: 0.82rem; }
+        .metric-card .value { font-size: 1.5rem; }
+        .section-title { font-size: 1rem; }
+        /* Streamlit columns collapse naturally; these reinforce touch targets */
+        .stSelectbox > div { font-size: 0.9rem; }
+        .stNumberInput input { font-size: 0.9rem; }
+        .stButton > button  { width: 100%; font-size: 0.9rem; }
+    }
+
+    /* ── Search-style text filter above selectbox ─────────────────────── */
+    .search-hint {
+        font-size: 0.78rem;
+        color: #999;
+        margin-bottom: 0.3rem;
+        font-style: italic;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-
-# =============================================================================
 # DATA & MODEL LOADERS
-# =============================================================================
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_session_data():
     if not SESSION_CSV.exists():
         return None
     df = pd.read_csv(SESSION_CSV)
     return df
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_match_data():
     if not MATCH_CSV.exists():
         return None
     return pd.read_csv(MATCH_CSV)
 
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def load_models():
     models = {}
     try:
@@ -185,10 +239,7 @@ def load_models():
         pass
     return models
 
-
-# =============================================================================
 # HELPER FUNCTIONS
-# =============================================================================
 
 def momentum_badge(label):
     if label == 1 or label == "1.0":
@@ -202,6 +253,73 @@ def momentum_color(label):
     if label == 1:   return C_BATTING
     elif label == -1: return C_BOWLING
     else:             return C_NEUTRAL
+
+
+#BUG FIX: resolve both team names correctly 
+@st.cache_data(show_spinner=False)
+def build_match_lookup(session_df: pd.DataFrame) -> dict:
+    """
+    For each match_id, extract the two unique team names from ALL rows
+    (not just the first row). In Test cricket the batting and fielding teams
+    swap across innings, so we union both columns across every session of
+    the match to reliably get both teams.
+
+    Returns: {match_id: (team_a, team_b, venue_or_date_str)}
+    """
+    lookup = {}
+    for mid, grp in session_df.groupby("match_id"):
+        batting_teams  = set(grp["batting_team"].dropna().unique())
+        fielding_teams = set(grp["fielding_team"].dropna().unique())
+        all_teams = sorted(batting_teams | fielding_teams)
+
+        if len(all_teams) >= 2:
+            team_a, team_b = all_teams[0], all_teams[1]
+        elif len(all_teams) == 1:
+            team_a = team_b = all_teams[0]   # edge-case guard
+        else:
+            team_a = team_b = "Unknown"
+
+        # Optional: pull date/venue for richer label if column exists
+        extra = ""
+        for col in ["match_date", "date", "venue"]:
+            if col in grp.columns:
+                val = grp[col].iloc[0]
+                if pd.notna(val):
+                    extra = f" · {str(val)[:10]}"
+                    break
+
+        lookup[mid] = (team_a, team_b, extra)
+    return lookup
+
+
+def match_label(mid: str, lookup: dict) -> str:
+    """Human-readable match label: 'ID — TeamA vs TeamB · date'"""
+    if mid not in lookup:
+        return str(mid)
+    team_a, team_b, extra = lookup[mid]
+    return f"{mid} — {team_a} vs {team_b}{extra}"
+
+
+def render_skeleton_cards(n: int = 3):
+    """Render n shimmer placeholder cards while data loads."""
+    cols = st.columns(n)
+    for col in cols:
+        with col:
+            st.markdown("""
+            <div class="skeleton-card">
+                <div class="skeleton-line tall"></div>
+                <div class="skeleton-line short"></div>
+            </div>""", unsafe_allow_html=True)
+
+
+def render_loading(message: str = "Loading data…"):
+    """Inline spinner with message."""
+    st.markdown(f"""
+    <div class="loading-overlay">
+        <div class="spinner"></div>
+        <span>{message}</span>
+    </div>""", unsafe_allow_html=True)
+
 
 def plot_wp_curve(session_df: pd.DataFrame, match_id: str):
     """Win probability curve across all sessions of a match."""
@@ -263,8 +381,8 @@ def plot_wp_curve(session_df: pd.DataFrame, match_id: str):
             range=[0, 1],
             showgrid=True,
             gridcolor="#F0F0F0",
-            title=dict(text="Win Probability", font=dict(size=11)),  # ← new syntax
-                ),
+            title=dict(text="Win Probability", font=dict(size=11)),
+        ),
         showlegend=False,
         font=dict(family="DM Sans"),
     )
@@ -345,10 +463,7 @@ def plot_session_stats(session_df: pd.DataFrame, match_id: str):
     fig.update_yaxes(title_text="Wickets", secondary_y=True, showgrid=False)
     return fig
 
-
-# =============================================================================
 # SIDEBAR
-# =============================================================================
 
 with st.sidebar:
     st.markdown("""
@@ -371,9 +486,15 @@ with st.sidebar:
     st.markdown("<hr style='border:none;border-top:1px solid #EEE;margin:1rem 0'>",
                 unsafe_allow_html=True)
 
-    session_df = load_session_data()
-    match_df   = load_match_data()
-    models     = load_models()
+    #Load data with spinner feedback
+    with st.spinner("Loading session data…"):
+        session_df = load_session_data()
+
+    with st.spinner("Loading match data…"):
+        match_df = load_match_data()
+
+    with st.spinner("Loading models…"):
+        models = load_models()
 
     if session_df is not None:
         st.markdown(f"""
@@ -395,10 +516,7 @@ with st.sidebar:
         </div>
         """, unsafe_allow_html=True)
 
-
-# =============================================================================
 # MAIN HEADER
-# =============================================================================
 
 st.markdown("""
 <div class="main-header">
@@ -407,10 +525,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-
-# =============================================================================
 # TAB 1: MATCH EXPLORER
-# =============================================================================
 
 if tab_choice == "📊 Match Explorer":
 
@@ -418,29 +533,57 @@ if tab_choice == "📊 Match Explorer":
         st.error("Session data not found. Run the pipeline first.")
         st.stop()
 
-    # Match selector
+    #Build team-name lookup once (cached)
+    match_lookup = build_match_lookup(session_df)
+    match_ids    = sorted(session_df["match_id"].unique())
+
+    # ── Match selector with search/filter
     col_sel, col_info = st.columns([2, 3])
 
     with col_sel:
         st.markdown('<div class="section-title">Select Match</div>', unsafe_allow_html=True)
-        match_ids = sorted(session_df["match_id"].unique())
 
-        # Build readable labels
-        def match_label(mid):
-            rows = session_df[session_df["match_id"] == mid]
-            teams = rows[["batting_team", "fielding_team"]].iloc[0]
-            return f"{mid} — {teams['batting_team']} vs {teams['fielding_team']}"
+        # Team name search filter — narrows the dropdown list
+        search_query = st.text_input(
+            "Search by team name or match ID",
+            placeholder="e.g. India, South Africa, 12345…",
+            label_visibility="visible",
+        )
+
+        # Filter match list based on search query
+        if search_query.strip():
+            q = search_query.strip().lower()
+            filtered_ids = [
+                mid for mid in match_ids
+                if q in match_label(mid, match_lookup).lower()
+            ]
+        else:
+            filtered_ids = match_ids
+
+        if not filtered_ids:
+            st.warning("No matches found for that search term.")
+            st.stop()
+
+        # Build labels for filtered list
+        label_to_id = {match_label(mid, match_lookup): mid for mid in filtered_ids}
+        labels      = list(label_to_id.keys())
+
+        st.markdown(
+            f'<div class="search-hint">{len(filtered_ids)} match(es) shown</div>',
+            unsafe_allow_html=True,
+        )
 
         selected_label = st.selectbox(
-            "Match", [match_label(m) for m in match_ids],
-            label_visibility="collapsed"
+            "Match",
+            labels,
+            label_visibility="collapsed",
         )
-        selected_match = match_ids[[match_label(m) for m in match_ids].index(selected_label)]
+        selected_match = label_to_id[selected_label]
 
+    #Load match sessions with loading feedback
     match_sessions = session_df[session_df["match_id"] == selected_match]
 
     with col_info:
-        # Match outcome summary
         if match_df is not None:
             m_row = match_df[match_df["match_id"] == selected_match]
             if not m_row.empty:
@@ -472,20 +615,27 @@ if tab_choice == "📊 Match Explorer":
                         </div>
                         <div class="label">Final Win Probability</div>
                     </div>""", unsafe_allow_html=True)
+            else:
+                # Skeleton placeholder if match row not available yet
+                render_skeleton_cards(3)
+        else:
+            render_skeleton_cards(3)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── Win Probability Curve ─────────────────────────────────────────
+    #Win Probability Curve
     st.markdown('<div class="section-title">Win Probability Across Sessions</div>',
                 unsafe_allow_html=True)
 
-    wp_fig = plot_wp_curve(session_df, selected_match)
+    with st.spinner("Rendering win probability curve…"):
+        wp_fig = plot_wp_curve(session_df, selected_match)
+
     if wp_fig:
         st.plotly_chart(wp_fig, use_container_width=True, config={"displayModeBar": False})
     else:
         st.info("Win probability data not available for this match.")
 
-    # ── Momentum Index + Session Stats ────────────────────────────────
+    #Momentum Index + Session Stats
     col_left, col_right = st.columns(2)
 
     with col_left:
@@ -495,7 +645,8 @@ if tab_choice == "📊 Match Explorer":
         <div class="info-box">
             Green bars = batting momentum gaining · Red bars = bowling momentum gaining
         </div>""", unsafe_allow_html=True)
-        mom_fig = plot_momentum_bars(session_df, selected_match)
+        with st.spinner("Rendering momentum index…"):
+            mom_fig = plot_momentum_bars(session_df, selected_match)
         if mom_fig:
             st.plotly_chart(mom_fig, use_container_width=True,
                             config={"displayModeBar": False})
@@ -503,12 +654,13 @@ if tab_choice == "📊 Match Explorer":
     with col_right:
         st.markdown('<div class="section-title">Run Rate & Wickets per Session</div>',
                     unsafe_allow_html=True)
-        stat_fig = plot_session_stats(session_df, selected_match)
+        with st.spinner("Rendering session statistics…"):
+            stat_fig = plot_session_stats(session_df, selected_match)
         if stat_fig:
             st.plotly_chart(stat_fig, use_container_width=True,
                             config={"displayModeBar": False})
 
-    # ── Session Table ─────────────────────────────────────────────────
+    # ── Session Table
     st.markdown('<div class="section-title">Session-Level Detail</div>',
                 unsafe_allow_html=True)
 
@@ -540,10 +692,7 @@ if tab_choice == "📊 Match Explorer":
     table.columns = [c.replace("_", " ").title() for c in table.columns]
     st.dataframe(table, use_container_width=True, hide_index=True)
 
-
-# =============================================================================
 # TAB 2: LIVE PREDICTION
-# =============================================================================
 
 elif tab_choice == "🔮 Live Prediction":
 
@@ -561,7 +710,7 @@ elif tab_choice == "🔮 Live Prediction":
         st.warning("XGBoost model not found. Run the pipeline first.")
         st.stop()
 
-    # ── Input Form ────────────────────────────────────────────────────
+    #Input Form 
     st.markdown("#### Session Statistics")
     c1, c2, c3 = st.columns(3)
 
@@ -594,49 +743,48 @@ elif tab_choice == "🔮 Live Prediction":
     with d2:
         prev_dot_pct   = st.number_input("Previous Session Dot Ball %", 0.0, 1.0, 0.40, 0.01)
 
-    # ── Prediction ────────────────────────────────────────────────────
+    # ── Prediction
     if st.button("🔮 Predict Momentum", type="primary", use_container_width=True):
 
-        # Build feature vector
-        features = {
-            "session_run_rate"      : session_run_rate,
-            "session_runs"          : session_runs,
-            "dot_ball_pct"          : dot_ball_pct,
-            "boundary_rate"         : boundary_rate,
-            "session_extras"        : 3,
-            "session_wickets"       : session_wickets,
-            "wickets_per_over"      : session_wickets / max(session_runs / 6 / max(session_run_rate, 0.1), 1),
-            "wickets_at_session_end": wickets_at_end,
-            "max_dot_streak"        : max_dot_streak,
-            "total_pressure_balls"  : total_pressure_balls,
-            "run_rate_delta"        : session_run_rate - prev_run_rate,
-            "wickets_delta"         : session_wickets - prev_wickets,
-            "dot_ball_pct_delta"    : dot_ball_pct - prev_dot_pct,
-            "session_momentum_index": (session_run_rate - prev_run_rate) - (session_wickets - prev_wickets) * 2.5,
-            "ball_age_start"        : ball_age_start,
-            "innings_num"           : innings_num,
-            "is_home_batting"       : 1 if is_home_batting == "Yes" else 0,
-            "toss_bat_first"        : 1 if toss_bat_first == "Yes" else 0,
-            "toss_winner_batting"   : 1 if is_home_batting == "Yes" and toss_bat_first == "Yes" else 0,
-            "is_fourth_innings"     : 1 if innings_num == 4 else 0,
-            "is_first_innings"      : 1 if innings_num == 1 else 0,
-            "is_morning_session"    : 0,
-            "is_evening_session"    : 0,
-            "top_order_exposed"     : 1 if wickets_at_end <= 4 else 0,
-        }
+        with st.spinner("Running model inference…"):
+            # Build feature vector
+            features = {
+                "session_run_rate"      : session_run_rate,
+                "session_runs"          : session_runs,
+                "dot_ball_pct"          : dot_ball_pct,
+                "boundary_rate"         : boundary_rate,
+                "session_extras"        : 3,
+                "session_wickets"       : session_wickets,
+                "wickets_per_over"      : session_wickets / max(session_runs / 6 / max(session_run_rate, 0.1), 1),
+                "wickets_at_session_end": wickets_at_end,
+                "max_dot_streak"        : max_dot_streak,
+                "total_pressure_balls"  : total_pressure_balls,
+                "run_rate_delta"        : session_run_rate - prev_run_rate,
+                "wickets_delta"         : session_wickets - prev_wickets,
+                "dot_ball_pct_delta"    : dot_ball_pct - prev_dot_pct,
+                "session_momentum_index": (session_run_rate - prev_run_rate) - (session_wickets - prev_wickets) * 2.5,
+                "ball_age_start"        : ball_age_start,
+                "innings_num"           : innings_num,
+                "is_home_batting"       : 1 if is_home_batting == "Yes" else 0,
+                "toss_bat_first"        : 1 if toss_bat_first == "Yes" else 0,
+                "toss_winner_batting"   : 1 if is_home_batting == "Yes" and toss_bat_first == "Yes" else 0,
+                "is_fourth_innings"     : 1 if innings_num == 4 else 0,
+                "is_first_innings"      : 1 if innings_num == 1 else 0,
+                "is_morning_session"    : 0,
+                "is_evening_session"    : 0,
+                "top_order_exposed"     : 1 if wickets_at_end <= 4 else 0,
+            }
 
-        X_input = pd.DataFrame([features])[SESSION_FEATURES].fillna(0)
-        proba   = models["xgb"].predict_proba(X_input)[0]
-        le      = models["le"]
-        # classes are encoded -1→0, 0→1, 1→2
-        pred_class_encoded = np.argmax(proba)
-        pred_label = le.inverse_transform([pred_class_encoded])[0]
+            X_input = pd.DataFrame([features])[SESSION_FEATURES].fillna(0)
+            proba   = models["xgb"].predict_proba(X_input)[0]
+            le      = models["le"]
+            pred_class_encoded = np.argmax(proba)
+            pred_label = le.inverse_transform([pred_class_encoded])[0]
 
-        # Map probabilities to momentum classes
-        class_order = le.classes_  # [-1, 0, 1]
-        prob_bowling = proba[list(class_order).index(-1)] if -1 in class_order else proba[0]
-        prob_neutral = proba[list(class_order).index(0)]  if  0 in class_order else proba[1]
-        prob_batting = proba[list(class_order).index(1)]  if  1 in class_order else proba[2]
+            class_order = le.classes_
+            prob_bowling = proba[list(class_order).index(-1)] if -1 in class_order else proba[0]
+            prob_neutral = proba[list(class_order).index(0)]  if  0 in class_order else proba[1]
+            prob_batting = proba[list(class_order).index(1)]  if  1 in class_order else proba[2]
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("---")
@@ -646,7 +794,6 @@ elif tab_choice == "🔮 Live Prediction":
 
         with res1:
             badge = momentum_badge(pred_label)
-            color = momentum_color(pred_label)
             st.markdown(f"""
             <div class="metric-card">
                 <div style="margin-bottom:0.5rem">{badge}</div>
@@ -709,9 +856,7 @@ elif tab_choice == "🔮 Live Prediction":
         </div>""", unsafe_allow_html=True)
 
 
-# =============================================================================
 # TAB 3: MODEL PERFORMANCE
-# =============================================================================
 
 elif tab_choice == "📈 Model Performance":
 
