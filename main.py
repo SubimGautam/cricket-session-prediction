@@ -1,24 +1,3 @@
-"""
-main.py — Run the full Cricket Momentum pipeline.
-
-Steps:
-    1. Load all YAML/JSON files
-    2. Save processed CSV
-    3. Generate visualizations          ← already working
-    4. Feature engineering (sessions)   ← NEW
-    5. Win probability computation      ← NEW
-    6. XGBoost + RF modeling            ← NEW
-    7. SHAP interpretability            ← NEW
-    8. Match outcome prediction         ← NEW
-
-Usage:
-    python main.py                  # full run (all files)
-    python main.py --sample 20      # quick test with 20 files
-    python main.py --charts-only    # skip loading, use existing CSV
-    python main.py --skip-charts    # skip charts, go straight to modeling
-    python main.py --sample 20 --skip-charts   # fastest dev loop
-"""
-
 import argparse
 import os
 import sys

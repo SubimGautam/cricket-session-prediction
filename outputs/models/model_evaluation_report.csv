@@ -1,4 +1,4 @@
 Model,Accuracy,F1 Macro,Log Loss,AUC
-Session Momentum -- XGB,0.5902 +/- 0.0587,0.5073 +/- 0.0605,nan +/- nan,N/A (multiclass)
-Session Momentum -- RF,0.5855 +/- 0.1121,0.5037 +/- 0.1180,0.8966 +/- 0.0816,N/A (multiclass)
+Session Momentum -- XGB,0.7622 +/- 0.0052,0.7288 +/- 0.0073,nan +/- nan,N/A (multiclass)
+Session Momentum -- RF,0.7030 +/- 0.0112,0.6847 +/- 0.0113,0.6853 +/- 0.0066,N/A (multiclass)
 Match Outcome -- XGBoost,1.0000,N/A,nan,nan

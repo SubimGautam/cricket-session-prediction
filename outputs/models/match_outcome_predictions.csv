@@ -1,21 +1,899 @@
 match_id,winner,home_team,result,predicted_win_prob,target
-1000851,South Africa,Unknown,normal,0.054622624,0
-1000853,South Africa,Unknown,normal,0.054622624,0
-1000855,Australia,Unknown,normal,0.054622624,0
-1000881,Australia,Unknown,normal,0.054622624,0
-1000883,Australia,Unknown,normal,0.054622624,0
-1000885,Australia,Unknown,normal,0.054622624,0
-1019985,New Zealand,Unknown,normal,0.054622624,0
-1019987,New Zealand,Unknown,normal,0.054622624,0
-1019993,New Zealand,Unknown,normal,0.054622624,0
-1019995,New Zealand,Unknown,normal,0.054622624,0
-1020041,draw/no result,Unknown,normal,0.054622624,0
-1020043,South Africa,Unknown,normal,0.054622624,0
-1020045,draw/no result,Unknown,normal,0.054622624,0
-1022593,India,Unknown,normal,0.054622624,0
-1022595,draw/no result,Unknown,normal,0.054622624,0
-1022597,India,Unknown,normal,0.054622624,0
-1022599,draw/no result,Unknown,normal,0.054622624,0
-1024041,New Zealand,Unknown,normal,0.054622624,0
-1024043,New Zealand,Unknown,normal,0.054622624,0
-1029825,England,Unknown,normal,0.054622624,0
+63963,draw/no result,Unknown,normal,0.0013276599,0
+64012,Australia,Unknown,normal,0.0013276599,0
+64013,England,Unknown,normal,0.0013276599,0
+64022,South Africa,Unknown,normal,0.0013276599,0
+64023,South Africa,Unknown,normal,0.0013276599,0
+64027,West Indies,Unknown,normal,0.0013276599,0
+64036,Australia,Unknown,normal,0.0013276599,0
+64038,draw/no result,Unknown,normal,0.0013276599,0
+64040,England,Unknown,normal,0.0013276599,0
+64041,South Africa,Unknown,normal,0.0013276599,0
+64042,England,Unknown,normal,0.0013276599,0
+64045,Pakistan,Unknown,normal,0.0013276599,0
+64047,draw/no result,Unknown,normal,0.0013276599,0
+64048,Australia,Unknown,normal,0.0013276599,0
+64049,Australia,Unknown,normal,0.0013276599,0
+64050,Pakistan,Unknown,normal,0.0013276599,0
+64051,draw/no result,Unknown,normal,0.0013276599,0
+64052,England,Unknown,normal,0.0013276599,0
+64053,England,Unknown,normal,0.0013276599,0
+64055,West Indies,Unknown,normal,0.0013276599,0
+64058,Sri Lanka,Unknown,normal,0.0013276599,0
+64059,draw/no result,Unknown,normal,0.0013276599,0
+64062,draw/no result,Unknown,normal,0.0013276599,0
+64063,South Africa,Unknown,normal,0.0013276599,0
+64071,Australia,Unknown,normal,0.0013276599,0
+64075,New Zealand,Unknown,normal,0.0013276599,0
+64076,South Africa,Unknown,normal,0.0013276599,0
+64080,draw/no result,Unknown,normal,0.0013276599,0
+64083,India,Unknown,normal,0.0013276599,0
+64094,England,Unknown,normal,0.0013276599,0
+64096,England,Unknown,normal,0.0013276599,0
+64100,draw/no result,Unknown,normal,0.0013276599,0
+64102,India,Unknown,normal,0.0013276599,0
+64104,New Zealand,Unknown,normal,0.0013276599,0
+64107,Australia,Unknown,normal,0.0013276599,0
+64108,Australia,Unknown,normal,0.0013276599,0
+64109,draw/no result,Unknown,normal,0.0013276599,0
+64110,India,Unknown,normal,0.0013276599,0
+64111,India,Unknown,normal,0.0013276599,0
+64113,Australia,Unknown,normal,0.0013276599,0
+64118,South Africa,Unknown,normal,0.0013276599,0
+64123,South Africa,Unknown,normal,0.0013276599,0
+64124,South Africa,Unknown,normal,0.0013276599,0
+64128,Australia,Unknown,normal,0.0013276599,0
+64129,draw/no result,Unknown,normal,0.0013276599,0
+64134,New Zealand,Unknown,normal,0.0013276599,0
+67517,draw/no result,Unknown,normal,0.0013276599,0
+207334,South Africa,Unknown,normal,0.0013276599,0
+208321,draw/no result,Unknown,normal,0.0013276599,0
+210366,England,Unknown,normal,0.0013276599,0
+213856,Australia,Unknown,normal,0.0013276599,0
+215010,England,Unknown,normal,0.0013276599,0
+215253,New Zealand,Unknown,normal,0.0013276599,0
+216055,New Zealand,Unknown,normal,0.0013276599,0
+216932,England,Unknown,normal,0.0013276599,0
+216994,England,Unknown,normal,0.0013276599,0
+218383,draw/no result,Unknown,normal,0.0013276599,0
+218813,Sri Lanka,Unknown,normal,0.0013276599,0
+219062,India,Unknown,normal,0.0013276599,0
+219612,Sri Lanka,Unknown,normal,0.0013276599,0
+221840,Australia,Unknown,normal,0.0013276599,0
+225164,draw/no result,Unknown,normal,0.0013276599,0
+225255,draw/no result,Unknown,normal,0.0013276599,0
+225256,England,Unknown,normal,0.0013276599,0
+225257,England,Unknown,normal,0.0013276599,0
+225258,England,Unknown,normal,0.0013276599,0
+225264,draw/no result,Unknown,normal,0.0013276599,0
+225265,England,Unknown,normal,0.0013276599,0
+225266,Sri Lanka,Unknown,normal,0.0013276599,0
+225443,Pakistan,Unknown,normal,0.0013276599,0
+226120,Australia,Unknown,normal,0.0013276599,0
+226350,draw/no result,Unknown,normal,0.0013276599,0
+226363,India,Unknown,normal,0.0013276599,0
+226372,Australia,Unknown,normal,0.0013276599,0
+226373,Australia,Unknown,normal,0.0013276599,0
+233797,draw/no result,Unknown,normal,0.0013276599,0
+234783,Pakistan,Unknown,normal,0.0013276599,0
+238167,Sri Lanka,Unknown,normal,0.0013276599,0
+238168,Sri Lanka,Unknown,normal,0.0013276599,0
+238171,Australia,Unknown,normal,0.0013276599,0
+238180,New Zealand,Unknown,normal,0.0013276599,0
+238186,India,Unknown,normal,0.0013276599,0
+238201,Australia,Unknown,normal,0.0013276599,0
+238202,Australia,Unknown,normal,0.0013276599,0
+238203,Australia,Unknown,normal,0.0013276599,0
+238205,South Africa,Unknown,normal,0.0013276599,0
+238206,draw/no result,Unknown,normal,0.0013276599,0
+238207,South Africa,Unknown,normal,0.0013276599,0
+238217,Pakistan,Unknown,normal,0.0013276599,0
+239025,draw/no result,Unknown,normal,0.0013276599,0
+239920,draw/no result,Unknown,normal,0.0013276599,0
+239921,draw/no result,Unknown,normal,0.0013276599,0
+239922,draw/no result,Unknown,normal,0.0013276599,0
+239923,India,Unknown,normal,0.0013276599,0
+249193,Sri Lanka,Unknown,normal,0.0013276599,0
+249194,Sri Lanka,Unknown,normal,0.0013276599,0
+249215,India,Unknown,normal,0.0013276599,0
+249216,South Africa,Unknown,normal,0.0013276599,0
+249217,South Africa,Unknown,normal,0.0013276599,0
+249222,Australia,Unknown,normal,0.0013276599,0
+249223,Australia,Unknown,normal,0.0013276599,0
+249224,Australia,Unknown,normal,0.0013276599,0
+249225,Australia,Unknown,normal,0.0013276599,0
+249226,Australia,Unknown,normal,0.0013276599,0
+250666,Pakistan,Unknown,normal,0.0013276599,0
+250667,South Africa,Unknown,normal,0.0013276599,0
+251485,New Zealand,Unknown,normal,0.0013276599,0
+251486,Sri Lanka,Unknown,normal,0.0013276599,0
+257765,Pakistan,Unknown,normal,0.0013276599,0
+257766,draw/no result,Unknown,normal,0.0013276599,0
+258459,draw/no result,Unknown,normal,0.0013276599,0
+258460,England,Unknown,normal,0.0013276599,0
+258461,England,Unknown,normal,0.0013276599,0
+258462,England,Unknown,normal,0.0013276599,0
+258468,draw/no result,Unknown,normal,0.0013276599,0
+258469,India,Unknown,normal,0.0013276599,0
+258470,draw/no result,Unknown,normal,0.0013276599,0
+282691,draw/no result,Unknown,normal,0.0013276599,0
+282692,India,Unknown,normal,0.0013276599,0
+291222,Sri Lanka,Unknown,normal,0.0013276599,0
+291223,draw/no result,Unknown,normal,0.0013276599,0
+291224,draw/no result,Unknown,normal,0.0013276599,0
+291338,Australia,Unknown,normal,0.0013276599,0
+291339,Australia,Unknown,normal,0.0013276599,0
+291351,Australia,Unknown,normal,0.0013276599,0
+291352,Australia,Unknown,normal,0.0013276599,0
+291353,India,Unknown,normal,0.0013276599,0
+291354,draw/no result,Unknown,normal,0.0013276599,0
+293478,Sri Lanka,Unknown,normal,0.0013276599,0
+293479,Sri Lanka,Unknown,normal,0.0013276599,0
+293480,Sri Lanka,Unknown,normal,0.0013276599,0
+296900,draw/no result,Unknown,normal,0.0013276599,0
+296901,England,Unknown,normal,0.0013276599,0
+296902,England,Unknown,normal,0.0013276599,0
+296909,draw/no result,Unknown,normal,0.0013276599,0
+296910,South Africa,Unknown,normal,0.0013276599,0
+296911,South Africa,Unknown,normal,0.0013276599,0
+296912,England,Unknown,normal,0.0013276599,0
+297806,India,Unknown,normal,0.0013276599,0
+297807,draw/no result,Unknown,normal,0.0013276599,0
+297808,draw/no result,Unknown,normal,0.0013276599,0
+298793,South Africa,Unknown,normal,0.0013276599,0
+298794,South Africa,Unknown,normal,0.0013276599,0
+298801,West Indies,Unknown,normal,0.0013276599,0
+298802,South Africa,Unknown,normal,0.0013276599,0
+298803,South Africa,Unknown,normal,0.0013276599,0
+299004,South Africa,Unknown,normal,0.0013276599,0
+299005,draw/no result,Unknown,normal,0.0013276599,0
+300429,New Zealand,Unknown,normal,0.0013276599,0
+300430,New Zealand,Unknown,normal,0.0013276599,0
+300442,New Zealand,Unknown,normal,0.0013276599,0
+300443,England,Unknown,normal,0.0013276599,0
+300444,England,Unknown,normal,0.0013276599,0
+312450,England,Unknown,normal,0.0013276599,0
+319132,Sri Lanka,Unknown,normal,0.0013276599,0
+319133,West Indies,Unknown,normal,0.0013276599,0
+319139,Australia,Unknown,normal,0.0013276599,0
+319140,draw/no result,Unknown,normal,0.0013276599,0
+319141,Australia,Unknown,normal,0.0013276599,0
+323947,South Africa,Unknown,normal,0.0013276599,0
+323948,South Africa,Unknown,normal,0.0013276599,0
+332911,draw/no result,Unknown,normal,0.0013276599,0
+332912,South Africa,Unknown,normal,0.0013276599,0
+332913,India,Unknown,normal,0.0013276599,0
+343729,Sri Lanka,Unknown,normal,0.0013276599,0
+343730,India,Unknown,normal,0.0013276599,0
+343731,Sri Lanka,Unknown,normal,0.0013276599,0
+345669,draw/no result,Unknown,normal,0.0013276599,0
+345670,India,Unknown,normal,0.0013276599,0
+345671,draw/no result,Unknown,normal,0.0013276599,0
+345672,India,Unknown,normal,0.0013276599,0
+345970,draw/no result,Unknown,normal,0.0013276599,0
+345971,England,Unknown,normal,0.0013276599,0
+345972,draw/no result,Unknown,normal,0.0013276599,0
+345973,Australia,Unknown,normal,0.0013276599,0
+345974,England,Unknown,normal,0.0013276599,0
+350345,South Africa,Unknown,normal,0.0013276599,0
+350346,South Africa,Unknown,normal,0.0013276599,0
+350472,Australia,Unknown,normal,0.0013276599,0
+350473,Australia,Unknown,normal,0.0013276599,0
+350474,South Africa,Unknown,normal,0.0013276599,0
+351679,Australia,Unknown,normal,0.0013276599,0
+351680,Australia,Unknown,normal,0.0013276599,0
+351681,South Africa,Unknown,normal,0.0013276599,0
+351682,South Africa,Unknown,normal,0.0013276599,0
+351683,Australia,Unknown,normal,0.0013276599,0
+352661,West Indies,Unknown,normal,0.0013276599,0
+352662,draw/no result,Unknown,normal,0.0013276599,0
+352663,draw/no result,Unknown,normal,0.0013276599,0
+352664,draw/no result,Unknown,normal,0.0013276599,0
+361050,India,Unknown,normal,0.0013276599,0
+361051,draw/no result,Unknown,normal,0.0013276599,0
+361759,draw/no result,Unknown,normal,0.0013276599,0
+366628,India,Unknown,normal,0.0013276599,0
+366629,draw/no result,Unknown,normal,0.0013276599,0
+378751,Sri Lanka,Unknown,normal,0.0013276599,0
+380712,England,Unknown,normal,0.0013276599,0
+380713,England,Unknown,normal,0.0013276599,0
+383288,draw/no result,Unknown,normal,0.0013276599,0
+386496,draw/no result,Unknown,normal,0.0013276599,0
+387570,draw/no result,Unknown,normal,0.0013276599,0
+387571,England,Unknown,normal,0.0013276599,0
+387572,draw/no result,Unknown,normal,0.0013276599,0
+387573,South Africa,Unknown,normal,0.0013276599,0
+388993,draw/no result,Unknown,normal,0.0013276599,0
+388994,draw/no result,Unknown,normal,0.0013276599,0
+390680,draw/no result,Unknown,normal,0.0013276599,0
+401071,Bangladesh,Unknown,normal,0.0013276599,0
+401072,Bangladesh,Unknown,normal,0.0013276599,0
+403367,Sri Lanka,Unknown,normal,0.0013276599,0
+403368,Sri Lanka,Unknown,normal,0.0013276599,0
+403369,draw/no result,Unknown,normal,0.0013276599,0
+403378,Sri Lanka,Unknown,normal,0.0013276599,0
+403379,Sri Lanka,Unknown,normal,0.0013276599,0
+406189,Australia,Unknown,normal,0.0013276599,0
+406190,draw/no result,Unknown,normal,0.0013276599,0
+406191,Australia,Unknown,normal,0.0013276599,0
+406199,Australia,Unknown,normal,0.0013276599,0
+406200,Australia,Unknown,normal,0.0013276599,0
+406201,Australia,Unknown,normal,0.0013276599,0
+423778,New Zealand,Unknown,normal,0.0013276599,0
+423779,Pakistan,Unknown,normal,0.0013276599,0
+423780,draw/no result,Unknown,normal,0.0013276599,0
+423786,New Zealand,Unknown,normal,0.0013276599,0
+423789,Australia,Unknown,normal,0.0013276599,0
+423790,Australia,Unknown,normal,0.0013276599,0
+426394,Australia,Unknown,normal,0.0013276599,0
+426395,Pakistan,Unknown,normal,0.0013276599,0
+426401,England,Unknown,normal,0.0013276599,0
+426402,England,Unknown,normal,0.0013276599,0
+426413,England,Unknown,normal,0.0013276599,0
+426414,England,Unknown,normal,0.0013276599,0
+426415,Pakistan,Unknown,normal,0.0013276599,0
+426416,England,Unknown,normal,0.0013276599,0
+426423,England,Unknown,normal,0.0013276599,0
+426424,England,Unknown,normal,0.0013276599,0
+428749,draw/no result,Unknown,normal,0.0013276599,0
+428750,England,Unknown,normal,0.0013276599,0
+428751,Australia,Unknown,normal,0.0013276599,0
+428752,England,Unknown,normal,0.0013276599,0
+428753,England,Unknown,normal,0.0013276599,0
+430881,draw/no result,Unknown,normal,0.0013276599,0
+430882,India,Unknown,normal,0.0013276599,0
+430883,India,Unknown,normal,0.0013276599,0
+434256,India,Unknown,normal,0.0013276599,0
+434257,India,Unknown,normal,0.0013276599,0
+439152,South Africa,Unknown,normal,0.0013276599,0
+439153,draw/no result,Unknown,normal,0.0013276599,0
+439154,South Africa,Unknown,normal,0.0013276599,0
+441825,South Africa,Unknown,normal,0.0013276599,0
+441826,India,Unknown,normal,0.0013276599,0
+456669,Sri Lanka,Unknown,normal,0.0013276599,0
+456670,draw/no result,Unknown,normal,0.0013276599,0
+456671,India,Unknown,normal,0.0013276599,0
+461571,draw/no result,Unknown,normal,0.0013276599,0
+461572,draw/no result,Unknown,normal,0.0013276599,0
+463146,South Africa,Unknown,normal,0.0013276599,0
+463147,India,Unknown,normal,0.0013276599,0
+463148,draw/no result,Unknown,normal,0.0013276599,0
+464526,India,Unknown,normal,0.0013276599,0
+464527,India,Unknown,normal,0.0013276599,0
+464531,draw/no result,Unknown,normal,0.0013276599,0
+464532,draw/no result,Unknown,normal,0.0013276599,0
+464533,India,Unknown,normal,0.0013276599,0
+464987,draw/no result,Unknown,normal,0.0013276599,0
+464988,draw/no result,Unknown,normal,0.0013276599,0
+464989,draw/no result,Unknown,normal,0.0013276599,0
+473921,Pakistan,Unknown,normal,0.0013276599,0
+473922,draw/no result,Unknown,normal,0.0013276599,0
+474463,England,Unknown,normal,0.0013276599,0
+474464,draw/no result,Unknown,normal,0.0013276599,0
+474465,draw/no result,Unknown,normal,0.0013276599,0
+474472,England,Unknown,normal,0.0013276599,0
+474473,England,Unknown,normal,0.0013276599,0
+474474,England,Unknown,normal,0.0013276599,0
+474475,England,Unknown,normal,0.0013276599,0
+474625,Australia,Unknown,normal,0.0013276599,0
+489218,West Indies,Unknown,normal,0.0013276599,0
+489219,Pakistan,Unknown,normal,0.0013276599,0
+489226,India,Unknown,normal,0.0013276599,0
+489227,draw/no result,Unknown,normal,0.0013276599,0
+489228,draw/no result,Unknown,normal,0.0013276599,0
+514029,South Africa,Unknown,normal,0.0013276599,0
+514030,Australia,Unknown,normal,0.0013276599,0
+514032,South Africa,Unknown,normal,0.0013276599,0
+514033,Sri Lanka,Unknown,normal,0.0013276599,0
+514034,South Africa,Unknown,normal,0.0013276599,0
+516212,Australia,Unknown,normal,0.0013276599,0
+516213,draw/no result,Unknown,normal,0.0013276599,0
+516214,draw/no result,Unknown,normal,0.0013276599,0
+518947,Australia,Unknown,normal,0.0013276599,0
+518948,New Zealand,Unknown,normal,0.0013276599,0
+518950,Australia,Unknown,normal,0.0013276599,0
+518951,Australia,Unknown,normal,0.0013276599,0
+518952,Australia,Unknown,normal,0.0013276599,0
+518953,Australia,Unknown,normal,0.0013276599,0
+520591,New Zealand,Unknown,normal,0.0013276599,0
+520603,draw/no result,Unknown,normal,0.0013276599,0
+520604,South Africa,Unknown,normal,0.0013276599,0
+520605,draw/no result,Unknown,normal,0.0013276599,0
+521225,Sri Lanka,Unknown,normal,0.0013276599,0
+521226,England,Unknown,normal,0.0013276599,0
+522245,Zimbabwe,Unknown,normal,0.0013276599,0
+523731,Pakistan,Unknown,normal,0.0013276599,0
+527017,New Zealand,Unknown,normal,0.0013276599,0
+530424,draw/no result,Unknown,normal,0.0013276599,0
+530425,Pakistan,Unknown,normal,0.0013276599,0
+530426,draw/no result,Unknown,normal,0.0013276599,0
+531628,Pakistan,Unknown,normal,0.0013276599,0
+531629,Pakistan,Unknown,normal,0.0013276599,0
+531630,Pakistan,Unknown,normal,0.0013276599,0
+531986,draw/no result,Unknown,normal,0.0013276599,0
+531987,West Indies,Unknown,normal,0.0013276599,0
+534205,England,Unknown,normal,0.0013276599,0
+534206,England,Unknown,normal,0.0013276599,0
+534207,draw/no result,Unknown,normal,0.0013276599,0
+534225,South Africa,Unknown,normal,0.0013276599,0
+534226,draw/no result,Unknown,normal,0.0013276599,0
+534227,South Africa,Unknown,normal,0.0013276599,0
+535997,India,Unknown,normal,0.0013276599,0
+535998,India,Unknown,normal,0.0013276599,0
+535999,draw/no result,Unknown,normal,0.0013276599,0
+538072,Pakistan,Unknown,normal,0.0013276599,0
+538073,Pakistan,Unknown,normal,0.0013276599,0
+540176,Australia,Unknown,normal,0.0013276599,0
+540177,draw/no result,Unknown,normal,0.0013276599,0
+540178,Australia,Unknown,normal,0.0013276599,0
+560929,West Indies,Unknown,normal,0.0013276599,0
+560930,West Indies,Unknown,normal,0.0013276599,0
+562444,Sri Lanka,Unknown,normal,0.0013276599,0
+562445,draw/no result,Unknown,normal,0.0013276599,0
+562446,draw/no result,Unknown,normal,0.0013276599,0
+565806,India,Unknown,normal,0.0013276599,0
+565807,England,Unknown,normal,0.0013276599,0
+565808,England,Unknown,normal,0.0013276599,0
+565809,draw/no result,Unknown,normal,0.0013276599,0
+565817,India,Unknown,normal,0.0013276599,0
+565818,India,Unknown,normal,0.0013276599,0
+566921,England,Unknown,normal,0.0013276599,0
+566922,England,Unknown,normal,0.0013276599,0
+566932,England,Unknown,normal,0.0013276599,0
+566933,England,Unknown,normal,0.0013276599,0
+566934,draw/no result,Unknown,normal,0.0013276599,0
+566935,England,Unknown,normal,0.0013276599,0
+566936,draw/no result,Unknown,normal,0.0013276599,0
+567356,South Africa,Unknown,normal,0.0013276599,0
+567357,South Africa,Unknown,normal,0.0013276599,0
+567363,South Africa,Unknown,normal,0.0013276599,0
+567364,South Africa,Unknown,normal,0.0013276599,0
+567365,South Africa,Unknown,normal,0.0013276599,0
+569243,draw/no result,Unknown,normal,0.0013276599,0
+569244,draw/no result,Unknown,normal,0.0013276599,0
+569245,draw/no result,Unknown,normal,0.0013276599,0
+573007,draw/no result,Unknown,normal,0.0013276599,0
+573008,draw/no result,Unknown,normal,0.0013276599,0
+573009,South Africa,Unknown,normal,0.0013276599,0
+573011,Australia,Unknown,normal,0.0013276599,0
+573012,Australia,Unknown,normal,0.0013276599,0
+573013,Australia,Unknown,normal,0.0013276599,0
+582192,Sri Lanka,Unknown,normal,0.0013276599,0
+582193,New Zealand,Unknown,normal,0.0013276599,0
+587469,West Indies,Unknown,normal,0.0013276599,0
+587470,West Indies,Unknown,normal,0.0013276599,0
+592397,Australia,Unknown,normal,0.0013276599,0
+592398,Australia,Unknown,normal,0.0013276599,0
+592399,Australia,Unknown,normal,0.0013276599,0
+592400,Australia,Unknown,normal,0.0013276599,0
+592401,Australia,Unknown,normal,0.0013276599,0
+593722,draw/no result,Unknown,normal,0.0013276599,0
+593988,West Indies,Unknown,normal,0.0013276599,0
+593989,West Indies,Unknown,normal,0.0013276599,0
+598812,India,Unknown,normal,0.0013276599,0
+598813,India,Unknown,normal,0.0013276599,0
+598814,India,Unknown,normal,0.0013276599,0
+598815,India,Unknown,normal,0.0013276599,0
+602472,draw/no result,Unknown,normal,0.0013276599,0
+602473,Sri Lanka,Unknown,normal,0.0013276599,0
+623576,Zimbabwe,Unknown,normal,0.0013276599,0
+623577,Bangladesh,Unknown,normal,0.0013276599,0
+648665,draw/no result,Unknown,normal,0.0013276599,0
+648667,South Africa,Unknown,normal,0.0013276599,0
+648673,Australia,Unknown,normal,0.0013276599,0
+648675,South Africa,Unknown,normal,0.0013276599,0
+648677,Australia,Unknown,normal,0.0013276599,0
+649087,Pakistan,Unknown,normal,0.0013276599,0
+649089,South Africa,Unknown,normal,0.0013276599,0
+657647,draw/no result,Unknown,normal,0.0013276599,0
+657649,Sri Lanka,Unknown,normal,0.0013276599,0
+657651,Pakistan,Unknown,normal,0.0013276599,0
+659555,Pakistan,Unknown,normal,0.0013276599,0
+659557,Zimbabwe,Unknown,normal,0.0013276599,0
+661679,draw/no result,Unknown,normal,0.0013276599,0
+661681,New Zealand,Unknown,normal,0.0013276599,0
+661683,New Zealand,Unknown,normal,0.0013276599,0
+667651,New Zealand,Unknown,normal,0.0013276599,0
+667653,draw/no result,Unknown,normal,0.0013276599,0
+667711,draw/no result,Unknown,normal,0.0013276599,0
+667713,India,Unknown,normal,0.0013276599,0
+667715,England,Unknown,normal,0.0013276599,0
+667717,England,Unknown,normal,0.0013276599,0
+667719,England,Unknown,normal,0.0013276599,0
+667899,draw/no result,Unknown,normal,0.0013276599,0
+667901,Sri Lanka,Unknown,normal,0.0013276599,0
+668949,draw/no result,Unknown,normal,0.0013276599,0
+668951,draw/no result,Unknown,normal,0.0013276599,0
+676525,India,Unknown,normal,0.0013276599,0
+676527,India,Unknown,normal,0.0013276599,0
+690347,Sri Lanka,Unknown,normal,0.0013276599,0
+690349,draw/no result,Unknown,normal,0.0013276599,0
+722329,South Africa,Unknown,normal,0.0013276599,0
+722331,draw/no result,Unknown,normal,0.0013276599,0
+722333,South Africa,Unknown,normal,0.0013276599,0
+722387,India,Unknown,normal,0.0013276599,0
+727929,Pakistan,Unknown,normal,0.0013276599,0
+730089,South Africa,Unknown,normal,0.0013276599,0
+730091,draw/no result,Unknown,normal,0.0013276599,0
+730277,New Zealand,Unknown,normal,0.0013276599,0
+730279,West Indies,Unknown,normal,0.0013276599,0
+730281,New Zealand,Unknown,normal,0.0013276599,0
+730295,West Indies,Unknown,normal,0.0013276599,0
+730297,West Indies,Unknown,normal,0.0013276599,0
+736435,South Africa,Unknown,normal,0.0013276599,0
+742611,Pakistan,Unknown,normal,0.0013276599,0
+742613,draw/no result,Unknown,normal,0.0013276599,0
+742615,New Zealand,Unknown,normal,0.0013276599,0
+743939,England,Unknown,normal,0.0013276599,0
+743941,New Zealand,Unknown,normal,0.0013276599,0
+743963,England,Unknown,normal,0.0013276599,0
+743965,Australia,Unknown,normal,0.0013276599,0
+743967,England,Unknown,normal,0.0013276599,0
+743969,England,Unknown,normal,0.0013276599,0
+743971,Australia,Unknown,normal,0.0013276599,0
+745153,Sri Lanka,Unknown,normal,0.0013276599,0
+745155,Sri Lanka,Unknown,normal,0.0013276599,0
+749777,New Zealand,Unknown,normal,0.0013276599,0
+749779,New Zealand,Unknown,normal,0.0013276599,0
+754737,Australia,Unknown,normal,0.0013276599,0
+754739,Australia,Unknown,normal,0.0013276599,0
+754741,draw/no result,Unknown,normal,0.0013276599,0
+754743,draw/no result,Unknown,normal,0.0013276599,0
+760781,Bangladesh,Unknown,normal,0.0013276599,0
+760783,Bangladesh,Unknown,normal,0.0013276599,0
+760785,Bangladesh,Unknown,normal,0.0013276599,0
+766929,draw/no result,Unknown,normal,0.0013276599,0
+766931,England,Unknown,normal,0.0013276599,0
+766933,West Indies,Unknown,normal,0.0013276599,0
+798375,Australia,Unknown,normal,0.0013276599,0
+800461,England,Unknown,normal,0.0013276599,0
+800463,draw/no result,Unknown,normal,0.0013276599,0
+800465,England,Unknown,normal,0.0013276599,0
+800467,South Africa,Unknown,normal,0.0013276599,0
+810423,Australia,Unknown,normal,0.0013276599,0
+810425,Australia,Unknown,normal,0.0013276599,0
+817213,draw/no result,Unknown,normal,0.0013276599,0
+817215,draw/no result,Unknown,normal,0.0013276599,0
+858493,draw/no result,Unknown,normal,0.0013276599,0
+858495,Pakistan,Unknown,normal,0.0013276599,0
+860263,Pakistan,Unknown,normal,0.0013276599,0
+860265,Sri Lanka,Unknown,normal,0.0013276599,0
+860267,Pakistan,Unknown,normal,0.0013276599,0
+870729,draw/no result,Unknown,normal,0.0013276599,0
+892509,Australia,Unknown,normal,0.0013276599,0
+892511,draw/no result,Unknown,normal,0.0013276599,0
+892513,Australia,Unknown,normal,0.0013276599,0
+892515,Australia,Unknown,normal,0.0013276599,0
+892517,Australia,Unknown,normal,0.0013276599,0
+892519,draw/no result,Unknown,normal,0.0013276599,0
+895773,Sri Lanka,Unknown,normal,0.0013276599,0
+895775,India,Unknown,normal,0.0013276599,0
+895777,India,Unknown,normal,0.0013276599,0
+902635,draw/no result,Unknown,normal,0.0013276599,0
+902637,Pakistan,Unknown,normal,0.0013276599,0
+902639,Pakistan,Unknown,normal,0.0013276599,0
+903603,India,Unknown,normal,0.0013276599,0
+903605,draw/no result,Unknown,normal,0.0013276599,0
+903607,India,Unknown,normal,0.0013276599,0
+903609,India,Unknown,normal,0.0013276599,0
+913613,England,Unknown,normal,0.0013276599,0
+913615,England,Unknown,normal,0.0013276599,0
+913617,draw/no result,Unknown,normal,0.0013276599,0
+913641,Pakistan,Unknown,normal,0.0013276599,0
+913643,England,Unknown,normal,0.0013276599,0
+913645,England,Unknown,normal,0.0013276599,0
+913647,Pakistan,Unknown,normal,0.0013276599,0
+914203,New Zealand,Unknown,normal,0.0013276599,0
+914205,New Zealand,Unknown,normal,0.0013276599,0
+914237,Australia,Unknown,normal,0.0013276599,0
+914239,Australia,Unknown,normal,0.0013276599,0
+915773,Sri Lanka,Unknown,normal,0.0013276599,0
+915775,Sri Lanka,Unknown,normal,0.0013276599,0
+936127,draw/no result,Unknown,normal,0.0013276599,0
+936129,South Africa,Unknown,normal,0.0013276599,0
+936147,South Africa,Unknown,normal,0.0013276599,0
+936149,South Africa,Unknown,normal,0.0013276599,0
+936151,South Africa,Unknown,normal,0.0013276599,0
+995451,Sri Lanka,Unknown,normal,0.0013276599,0
+995453,Sri Lanka,Unknown,normal,0.0013276599,0
+995455,Sri Lanka,Unknown,normal,0.0013276599,0
+1000851,South Africa,Unknown,normal,0.0013276599,0
+1000853,South Africa,Unknown,normal,0.0013276599,0
+1000855,Australia,Unknown,normal,0.0013276599,0
+1000881,Australia,Unknown,normal,0.0013276599,0
+1000883,Australia,Unknown,normal,0.0013276599,0
+1000885,Australia,Unknown,normal,0.0013276599,0
+1019985,New Zealand,Unknown,normal,0.0013276599,0
+1019987,New Zealand,Unknown,normal,0.0013276599,0
+1019993,New Zealand,Unknown,normal,0.0013276599,0
+1019995,New Zealand,Unknown,normal,0.0013276599,0
+1020041,draw/no result,Unknown,normal,0.0013276599,0
+1020043,South Africa,Unknown,normal,0.0013276599,0
+1020045,draw/no result,Unknown,normal,0.0013276599,0
+1022593,India,Unknown,normal,0.0013276599,0
+1022595,draw/no result,Unknown,normal,0.0013276599,0
+1022597,India,Unknown,normal,0.0013276599,0
+1022599,draw/no result,Unknown,normal,0.0013276599,0
+1024041,New Zealand,Unknown,normal,0.0013276599,0
+1024043,New Zealand,Unknown,normal,0.0013276599,0
+1029825,England,Unknown,normal,0.0013276599,0
+1029827,Bangladesh,Unknown,normal,0.0013276599,0
+1030213,India,Unknown,normal,0.0013276599,0
+1030215,India,Unknown,normal,0.0013276599,0
+1030217,India,Unknown,normal,0.0013276599,0
+1031437,England,Unknown,normal,0.0013276599,0
+1031439,South Africa,Unknown,normal,0.0013276599,0
+1031441,England,Unknown,normal,0.0013276599,0
+1031443,England,Unknown,normal,0.0013276599,0
+1031659,England,Unknown,normal,0.0013276599,0
+1031661,West Indies,Unknown,normal,0.0013276599,0
+1031663,England,Unknown,normal,0.0013276599,0
+1034809,draw/no result,Unknown,normal,0.0013276599,0
+1034811,India,Unknown,normal,0.0013276599,0
+1034813,India,Unknown,normal,0.0013276599,0
+1034815,India,Unknown,normal,0.0013276599,0
+1034817,India,Unknown,normal,0.0013276599,0
+1041761,India,Unknown,normal,0.0013276599,0
+1050229,Pakistan,Unknown,normal,0.0013276599,0
+1050231,Pakistan,Unknown,normal,0.0013276599,0
+1050233,West Indies,Unknown,normal,0.0013276599,0
+1059702,Sri Lanka,Unknown,normal,0.0013276599,0
+1059703,Sri Lanka,Unknown,normal,0.0013276599,0
+1062573,Australia,Unknown,normal,0.0013276599,0
+1062574,India,Unknown,normal,0.0013276599,0
+1062575,draw/no result,Unknown,normal,0.0013276599,0
+1062576,India,Unknown,normal,0.0013276599,0
+1072305,Australia,Unknown,normal,0.0013276599,0
+1072306,Australia,Unknown,normal,0.0013276599,0
+1072307,Australia,Unknown,normal,0.0013276599,0
+1072308,draw/no result,Unknown,normal,0.0013276599,0
+1072309,Australia,Unknown,normal,0.0013276599,0
+1075502,South Africa,Unknown,normal,0.0013276599,0
+1075503,South Africa,Unknown,normal,0.0013276599,0
+1075982,Australia,Unknown,normal,0.0013276599,0
+1075983,South Africa,Unknown,normal,0.0013276599,0
+1075984,South Africa,Unknown,normal,0.0013276599,0
+1075985,South Africa,Unknown,normal,0.0013276599,0
+1077953,Pakistan,Unknown,normal,0.0013276599,0
+1077954,West Indies,Unknown,normal,0.0013276599,0
+1077955,Pakistan,Unknown,normal,0.0013276599,0
+1083444,Sri Lanka,Unknown,normal,0.0013276599,0
+1083445,Bangladesh,Unknown,normal,0.0013276599,0
+1086066,draw/no result,Unknown,normal,0.0013276599,0
+1104284,Bangladesh,Unknown,normal,0.0013276599,0
+1104285,Australia,Unknown,normal,0.0013276599,0
+1104483,Sri Lanka,Unknown,normal,0.0013276599,0
+1109602,India,Unknown,normal,0.0013276599,0
+1109603,India,Unknown,normal,0.0013276599,0
+1109604,India,Unknown,normal,0.0013276599,0
+1115780,New Zealand,Unknown,normal,0.0013276599,0
+1115781,draw/no result,Unknown,normal,0.0013276599,0
+1115793,New Zealand,Unknown,normal,0.0013276599,0
+1115794,New Zealand,Unknown,normal,0.0013276599,0
+1119535,Pakistan,Unknown,normal,0.0013276599,0
+1119536,England,Unknown,normal,0.0013276599,0
+1119549,England,Unknown,normal,0.0013276599,0
+1119550,England,Unknown,normal,0.0013276599,0
+1119551,India,Unknown,normal,0.0013276599,0
+1119552,England,Unknown,normal,0.0013276599,0
+1119553,England,Unknown,normal,0.0013276599,0
+1120284,Sri Lanka,Unknown,normal,0.0013276599,0
+1120285,Sri Lanka,Unknown,normal,0.0013276599,0
+1122276,South Africa,Unknown,normal,0.0013276599,0
+1122277,South Africa,Unknown,normal,0.0013276599,0
+1122278,India,Unknown,normal,0.0013276599,0
+1122310,South Africa,Unknown,normal,0.0013276599,0
+1122723,draw/no result,Unknown,normal,0.0013276599,0
+1122724,India,Unknown,normal,0.0013276599,0
+1122725,draw/no result,Unknown,normal,0.0013276599,0
+1122886,West Indies,Unknown,normal,0.0013276599,0
+1122887,draw/no result,Unknown,normal,0.0013276599,0
+1127284,Pakistan,Unknown,normal,0.0013276599,0
+1130744,draw/no result,Unknown,normal,0.0013276599,0
+1130745,Sri Lanka,Unknown,normal,0.0013276599,0
+1135149,West Indies,Unknown,normal,0.0013276599,0
+1135150,draw/no result,Unknown,normal,0.0013276599,0
+1135151,Sri Lanka,Unknown,normal,0.0013276599,0
+1140385,England,Unknown,normal,0.0013276599,0
+1140386,England,Unknown,normal,0.0013276599,0
+1140387,England,Unknown,normal,0.0013276599,0
+1142581,Sri Lanka,Unknown,normal,0.0013276599,0
+1142582,Sri Lanka,Unknown,normal,0.0013276599,0
+1144153,South Africa,Unknown,normal,0.0013276599,0
+1144154,South Africa,Unknown,normal,0.0013276599,0
+1144155,South Africa,Unknown,normal,0.0013276599,0
+1144164,Sri Lanka,Unknown,normal,0.0013276599,0
+1144165,Sri Lanka,Unknown,normal,0.0013276599,0
+1144993,India,Unknown,normal,0.0013276599,0
+1144994,Australia,Unknown,normal,0.0013276599,0
+1144995,India,Unknown,normal,0.0013276599,0
+1144996,draw/no result,Unknown,normal,0.0013276599,0
+1145000,Australia,Unknown,normal,0.0013276599,0
+1145001,Australia,Unknown,normal,0.0013276599,0
+1146717,West Indies,Unknown,normal,0.0013276599,0
+1146718,West Indies,Unknown,normal,0.0013276599,0
+1152839,England,Unknown,normal,0.0013276599,0
+1152846,Australia,Unknown,normal,0.0013276599,0
+1152847,draw/no result,Unknown,normal,0.0013276599,0
+1152848,England,Unknown,normal,0.0013276599,0
+1152849,Australia,Unknown,normal,0.0013276599,0
+1152850,England,Unknown,normal,0.0013276599,0
+1153311,Bangladesh,Unknown,normal,0.0013276599,0
+1153312,Bangladesh,Unknown,normal,0.0013276599,0
+1153639,Zimbabwe,Unknown,normal,0.0013276599,0
+1153640,Bangladesh,Unknown,normal,0.0013276599,0
+1153838,draw/no result,Unknown,normal,0.0013276599,0
+1153839,New Zealand,Unknown,normal,0.0013276599,0
+1153847,New Zealand,Unknown,normal,0.0013276599,0
+1153848,New Zealand,Unknown,normal,0.0013276599,0
+1157370,draw/no result,Unknown,normal,0.0013276599,0
+1157371,Pakistan,Unknown,normal,0.0013276599,0
+1157381,New Zealand,Unknown,normal,0.0013276599,0
+1157382,Pakistan,Unknown,normal,0.0013276599,0
+1157383,New Zealand,Unknown,normal,0.0013276599,0
+1157752,India,Unknown,normal,0.0013276599,0
+1157753,India,Unknown,normal,0.0013276599,0
+1158062,West Indies,Unknown,normal,0.0013276599,0
+1158063,West Indies,Unknown,normal,0.0013276599,0
+1158064,England,Unknown,normal,0.0013276599,0
+1168025,draw/no result,Unknown,normal,0.0013276599,0
+1183530,Australia,Unknown,normal,0.0013276599,0
+1183531,Australia,Unknown,normal,0.0013276599,0
+1183532,Australia,Unknown,normal,0.0013276599,0
+1183533,Australia,Unknown,normal,0.0013276599,0
+1183534,Australia,Unknown,normal,0.0013276599,0
+1185304,South Africa,Unknown,normal,0.0013276599,0
+1185305,England,Unknown,normal,0.0013276599,0
+1185306,England,Unknown,normal,0.0013276599,0
+1185307,England,Unknown,normal,0.0013276599,0
+1187007,India,Unknown,normal,0.0013276599,0
+1187008,India,Unknown,normal,0.0013276599,0
+1187009,India,Unknown,normal,0.0013276599,0
+1187016,India,Unknown,normal,0.0013276599,0
+1187017,India,Unknown,normal,0.0013276599,0
+1187671,New Zealand,Unknown,normal,0.0013276599,0
+1187672,draw/no result,Unknown,normal,0.0013276599,0
+1187685,New Zealand,Unknown,normal,0.0013276599,0
+1187686,New Zealand,Unknown,normal,0.0013276599,0
+1188628,India,Unknown,normal,0.0013276599,0
+1188629,India,Unknown,normal,0.0013276599,0
+1192873,Sri Lanka,Unknown,normal,0.0013276599,0
+1192874,New Zealand,Unknown,normal,0.0013276599,0
+1198241,England,Unknown,normal,0.0013276599,0
+1198242,draw/no result,Unknown,normal,0.0013276599,0
+1198243,draw/no result,Unknown,normal,0.0013276599,0
+1206635,draw/no result,Unknown,normal,0.0013276599,0
+1206636,Pakistan,Unknown,normal,0.0013276599,0
+1212541,Sri Lanka,Unknown,normal,0.0013276599,0
+1212542,draw/no result,Unknown,normal,0.0013276599,0
+1213062,Pakistan,Unknown,normal,0.0013276599,0
+1214666,Bangladesh,Unknown,normal,0.0013276599,0
+1223869,Australia,Unknown,normal,0.0013276599,0
+1223870,India,Unknown,normal,0.0013276599,0
+1223871,draw/no result,Unknown,normal,0.0013276599,0
+1223872,India,Unknown,normal,0.0013276599,0
+1225247,West Indies,Unknown,normal,0.0013276599,0
+1225248,England,Unknown,normal,0.0013276599,0
+1225249,England,Unknown,normal,0.0013276599,0
+1233957,New Zealand,Unknown,normal,0.0013276599,0
+1233958,New Zealand,Unknown,normal,0.0013276599,0
+1233962,New Zealand,Unknown,normal,0.0013276599,0
+1233963,New Zealand,Unknown,normal,0.0013276599,0
+1237356,South Africa,Unknown,normal,0.0013276599,0
+1237357,South Africa,Unknown,normal,0.0013276599,0
+1239543,draw/no result,Unknown,normal,0.0013276599,0
+1239544,India,Unknown,normal,0.0013276599,0
+1239545,England,Unknown,normal,0.0013276599,0
+1239546,India,Unknown,normal,0.0013276599,0
+1243015,England,Unknown,normal,0.0013276599,0
+1243016,England,Unknown,normal,0.0013276599,0
+1243017,Pakistan,Unknown,normal,0.0013276599,0
+1243018,Pakistan,Unknown,normal,0.0013276599,0
+1243384,England,Unknown,normal,0.0013276599,0
+1243385,India,Unknown,normal,0.0013276599,0
+1243386,India,Unknown,normal,0.0013276599,0
+1243387,India,Unknown,normal,0.0013276599,0
+1244025,West Indies,Unknown,normal,0.0013276599,0
+1244026,West Indies,Unknown,normal,0.0013276599,0
+1249210,draw/no result,Unknown,normal,0.0013276599,0
+1249211,New Zealand,Unknown,normal,0.0013276599,0
+1249875,New Zealand,Unknown,normal,0.0013276599,0
+1252073,draw/no result,Unknown,normal,0.0013276599,0
+1252074,draw/no result,Unknown,normal,0.0013276599,0
+1255828,draw/no result,Unknown,normal,0.0013276599,0
+1255829,Sri Lanka,Unknown,normal,0.0013276599,0
+1256726,draw/no result,Unknown,normal,0.0013276599,0
+1256727,draw/no result,Unknown,normal,0.0013276599,0
+1256728,West Indies,Unknown,normal,0.0013276599,0
+1257186,Pakistan,Unknown,normal,0.0013276599,0
+1257187,Pakistan,Unknown,normal,0.0013276599,0
+1260093,draw/no result,Unknown,normal,0.0013276599,0
+1263149,South Africa,Unknown,normal,0.0013276599,0
+1263150,South Africa,Unknown,normal,0.0013276599,0
+1263169,West Indies,Unknown,normal,0.0013276599,0
+1263170,Pakistan,Unknown,normal,0.0013276599,0
+1263462,Australia,Unknown,normal,0.0013276599,0
+1263463,Australia,Unknown,normal,0.0013276599,0
+1263464,Australia,Unknown,normal,0.0013276599,0
+1263465,draw/no result,Unknown,normal,0.0013276599,0
+1263466,Australia,Unknown,normal,0.0013276599,0
+1263571,draw/no result,Unknown,normal,0.0013276599,0
+1263620,draw/no result,Unknown,normal,0.0013276599,0
+1267676,Bangladesh,Unknown,normal,0.0013276599,0
+1276901,England,Unknown,normal,0.0013276599,0
+1276902,England,Unknown,normal,0.0013276599,0
+1276903,England,Unknown,normal,0.0013276599,0
+1276916,South Africa,Unknown,normal,0.0013276599,0
+1276917,England,Unknown,normal,0.0013276599,0
+1276918,England,Unknown,normal,0.0013276599,0
+1277079,India,Unknown,normal,0.0013276599,0
+1277080,South Africa,Unknown,normal,0.0013276599,0
+1277081,South Africa,Unknown,normal,0.0013276599,0
+1277100,South Africa,Unknown,normal,0.0013276599,0
+1277101,South Africa,Unknown,normal,0.0013276599,0
+1277977,Pakistan,Unknown,normal,0.0013276599,0
+1277978,Pakistan,Unknown,normal,0.0013276599,0
+1278674,draw/no result,Unknown,normal,0.0013276599,0
+1278675,India,Unknown,normal,0.0013276599,0
+1278682,India,Unknown,normal,0.0013276599,0
+1278683,India,Unknown,normal,0.0013276599,0
+1288310,draw/no result,Unknown,normal,0.0013276599,0
+1288311,draw/no result,Unknown,normal,0.0013276599,0
+1288312,Australia,Unknown,normal,0.0013276599,0
+1288345,Sri Lanka,Unknown,normal,0.0013276599,0
+1288346,Sri Lanka,Unknown,normal,0.0013276599,0
+1288979,Bangladesh,Unknown,normal,0.0013276599,0
+1288980,New Zealand,Unknown,normal,0.0013276599,0
+1288981,New Zealand,Unknown,normal,0.0013276599,0
+1288982,South Africa,Unknown,normal,0.0013276599,0
+1301327,draw/no result,Unknown,normal,0.0013276599,0
+1307301,Australia,Unknown,normal,0.0013276599,0
+1307302,Sri Lanka,Unknown,normal,0.0013276599,0
+1308488,draw/no result,Unknown,normal,0.0013276599,0
+1308489,Sri Lanka,Unknown,normal,0.0013276599,0
+1317147,West Indies,Unknown,normal,0.0013276599,0
+1317148,West Indies,Unknown,normal,0.0013276599,0
+1317484,Australia,Unknown,normal,0.0013276599,0
+1317485,Australia,Unknown,normal,0.0013276599,0
+1317492,Australia,Unknown,normal,0.0013276599,0
+1317493,Australia,Unknown,normal,0.0013276599,0
+1317494,draw/no result,Unknown,normal,0.0013276599,0
+1320741,England,Unknown,normal,0.0013276599,0
+1320953,Pakistan,Unknown,normal,0.0013276599,0
+1320954,Sri Lanka,Unknown,normal,0.0013276599,0
+1322355,England,Unknown,normal,0.0013276599,0
+1322356,New Zealand,Unknown,normal,0.0013276599,0
+1322357,New Zealand,Unknown,normal,0.0013276599,0
+1322358,New Zealand,Unknown,normal,0.0013276599,0
+1330871,England,Unknown,normal,0.0013276599,0
+1330872,England,Unknown,normal,0.0013276599,0
+1330873,England,Unknown,normal,0.0013276599,0
+1336043,Australia,Unknown,normal,0.0013276599,0
+1336044,Australia,Unknown,normal,0.0013276599,0
+1336045,England,Unknown,normal,0.0013276599,0
+1336046,draw/no result,Unknown,normal,0.0013276599,0
+1336047,England,Unknown,normal,0.0013276599,0
+1336073,Australia,Unknown,normal,0.0013276599,0
+1336127,England,Unknown,normal,0.0013276599,0
+1339599,South Africa,Unknown,normal,0.0013276599,0
+1339600,South Africa,Unknown,normal,0.0013276599,0
+1339609,draw/no result,Unknown,normal,0.0013276599,0
+1339610,draw/no result,Unknown,normal,0.0013276599,0
+1340848,India,Unknown,normal,0.0013276599,0
+1340849,India,Unknown,normal,0.0013276599,0
+1348652,India,Unknown,normal,0.0013276599,0
+1348653,India,Unknown,normal,0.0013276599,0
+1348654,Australia,Unknown,normal,0.0013276599,0
+1348655,draw/no result,Unknown,normal,0.0013276599,0
+1350681,draw/no result,Unknown,normal,0.0013276599,0
+1350682,West Indies,Unknown,normal,0.0013276599,0
+1355723,Bangladesh,Unknown,normal,0.0013276599,0
+1358412,Australia,Unknown,normal,0.0013276599,0
+1363447,Sri Lanka,Unknown,normal,0.0013276599,0
+1363448,Sri Lanka,Unknown,normal,0.0013276599,0
+1375842,Australia,Unknown,normal,0.0013276599,0
+1375843,Australia,Unknown,normal,0.0013276599,0
+1375844,Australia,Unknown,normal,0.0013276599,0
+1375845,Australia,Unknown,normal,0.0013276599,0
+1375846,West Indies,Unknown,normal,0.0013276599,0
+1375875,Australia,Unknown,normal,0.0013276599,0
+1381212,India,Unknown,normal,0.0013276599,0
+1381213,draw/no result,Unknown,normal,0.0013276599,0
+1385685,Pakistan,Unknown,normal,0.0013276599,0
+1385686,Pakistan,Unknown,normal,0.0013276599,0
+1385691,England,Unknown,normal,0.0013276599,0
+1385692,England,Unknown,normal,0.0013276599,0
+1385693,England,Unknown,normal,0.0013276599,0
+1385694,England,Unknown,normal,0.0013276599,0
+1385695,England,Unknown,normal,0.0013276599,0
+1385696,Sri Lanka,Unknown,normal,0.0013276599,0
+1387603,South Africa,Unknown,normal,0.0013276599,0
+1387604,India,Unknown,normal,0.0013276599,0
+1388221,New Zealand,Unknown,normal,0.0013276599,0
+1388222,New Zealand,Unknown,normal,0.0013276599,0
+1388226,Australia,Unknown,normal,0.0013276599,0
+1388227,Australia,Unknown,normal,0.0013276599,0
+1389399,England,Unknown,normal,0.0013276599,0
+1389400,India,Unknown,normal,0.0013276599,0
+1389401,India,Unknown,normal,0.0013276599,0
+1389402,India,Unknown,normal,0.0013276599,0
+1389403,India,Unknown,normal,0.0013276599,0
+1392691,England,Unknown,normal,0.0013276599,0
+1395703,Bangladesh,Unknown,normal,0.0013276599,0
+1395704,New Zealand,Unknown,normal,0.0013276599,0
+1406076,India,Unknown,normal,0.0013276599,0
+1406077,India,Unknown,normal,0.0013276599,0
+1419830,Sri Lanka,Unknown,normal,0.0013276599,0
+1419831,Sri Lanka,Unknown,normal,0.0013276599,0
+1426555,India,Unknown,normal,0.0013276599,0
+1426556,Australia,Unknown,normal,0.0013276599,0
+1426557,draw/no result,Unknown,normal,0.0013276599,0
+1426558,Australia,Unknown,normal,0.0013276599,0
+1426559,Australia,Unknown,normal,0.0013276599,0
+1426629,Australia,Unknown,normal,0.0013276599,0
+1428554,England,Unknown,normal,0.0013276599,0
+1428555,England,Unknown,normal,0.0013276599,0
+1428556,New Zealand,Unknown,normal,0.0013276599,0
+1431085,Ireland,Unknown,normal,0.0013276599,0
+1432209,South Africa,Unknown,normal,0.0013276599,0
+1432210,South Africa,Unknown,normal,0.0013276599,0
+1432217,South Africa,Unknown,normal,0.0013276599,0
+1432218,South Africa,Unknown,normal,0.0013276599,0
+1432231,England,Unknown,normal,0.0013276599,0
+1433365,draw/no result,Unknown,normal,0.0013276599,0
+1433366,South Africa,Unknown,normal,0.0013276599,0
+1433378,West Indies,Unknown,normal,0.0013276599,0
+1433379,Bangladesh,Unknown,normal,0.0013276599,0
+1434290,India,Unknown,normal,0.0013276599,0
+1439891,India,Unknown,normal,0.0013276599,0
+1439892,India,Unknown,normal,0.0013276599,0
+1439896,New Zealand,Unknown,normal,0.0013276599,0
+1439897,New Zealand,Unknown,normal,0.0013276599,0
+1439898,New Zealand,Unknown,normal,0.0013276599,0
+1442213,Bangladesh,Unknown,normal,0.0013276599,0
+1442214,Bangladesh,Unknown,normal,0.0013276599,0
+1442215,England,Unknown,normal,0.0013276599,0
+1442216,Pakistan,Unknown,normal,0.0013276599,0
+1442217,Pakistan,Unknown,normal,0.0013276599,0
+1442218,Pakistan,Unknown,normal,0.0013276599,0
+1442219,West Indies,Unknown,normal,0.0013276599,0
+1447096,Sri Lanka,Unknown,normal,0.0013276599,0
+1447097,Sri Lanka,Unknown,normal,0.0013276599,0
+1448349,England,Unknown,normal,0.0013276599,0
+1448350,India,Unknown,normal,0.0013276599,0
+1448351,England,Unknown,normal,0.0013276599,0
+1448352,draw/no result,Unknown,normal,0.0013276599,0
+1448353,India,Unknown,normal,0.0013276599,0
+1449769,South Africa,Unknown,normal,0.0013276599,0
+1453293,South Africa,Unknown,normal,0.0013276599,0
+1453294,South Africa,Unknown,normal,0.0013276599,0
+1455611,Australia,Unknown,normal,0.0013276599,0
+1455612,Australia,Unknown,normal,0.0013276599,0
+1455613,Australia,Unknown,normal,0.0013276599,0
+1455614,England,Unknown,normal,0.0013276599,0
+1455615,Australia,Unknown,normal,0.0013276599,0
+1459906,Australia,Unknown,normal,0.0013276599,0
+1459907,Australia,Unknown,normal,0.0013276599,0
+1467700,Ireland,Unknown,normal,0.0013276599,0
+1472517,Australia,Unknown,normal,0.0013276599,0
+1472518,Australia,Unknown,normal,0.0013276599,0
+1472519,Australia,Unknown,normal,0.0013276599,0
+1476409,Zimbabwe,Unknown,normal,0.0013276599,0
+1476410,Bangladesh,Unknown,normal,0.0013276599,0
+1478863,South Africa,Unknown,normal,0.0013276599,0
+1478864,South Africa,Unknown,normal,0.0013276599,0
+1478872,New Zealand,Unknown,normal,0.0013276599,0
+1478873,New Zealand,Unknown,normal,0.0013276599,0
+1479569,India,Unknown,normal,0.0013276599,0
+1479570,India,Unknown,normal,0.0013276599,0
+1479571,South Africa,Unknown,normal,0.0013276599,0
+1479572,South Africa,Unknown,normal,0.0013276599,0
+1485503,draw/no result,Unknown,normal,0.0013276599,0
+1485504,Sri Lanka,Unknown,normal,0.0013276599,0
+1491732,draw/no result,Unknown,normal,0.0013276599,0
+1491733,New Zealand,Unknown,normal,0.0013276599,0
+1491734,New Zealand,Unknown,normal,0.0013276599,0
+1501893,Pakistan,Unknown,normal,0.0013276599,0
+1501894,South Africa,Unknown,normal,0.0013276599,0
+1506012,Bangladesh,Unknown,normal,0.0013276599,0
+1506013,Bangladesh,Unknown,normal,0.0013276599,0
