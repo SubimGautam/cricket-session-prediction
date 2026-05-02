@@ -14,7 +14,6 @@ from datetime import datetime
 
 warnings.filterwarnings("ignore")
 
-# ── Path setup ───────────────────────────────────────────────────────────────
 BASE_DIR    = Path(__file__).parent
 OUTPUT_DIR  = BASE_DIR / "outputs"
 MODEL_DIR   = OUTPUT_DIR / "models"
@@ -22,14 +21,17 @@ SESSION_CSV = OUTPUT_DIR / "session_features.csv"
 MATCH_CSV   = OUTPUT_DIR / "match_level_features.csv"
 sys.path.insert(0, str(BASE_DIR / "src"))
 
-# ── Design tokens ────────────────────────────────────────────────────────────
-C_PRIMARY = "#1B4F72"
-C_BATTING = "#008855"
-C_BOWLING = "#CC3333"
-C_NEUTRAL = "#555555"
-C_ACCENT  = "#D4AC0D"
-C_BG      = "#FAFAF7"
-C_BORDER  = "#DDDDDD"
+# ── Design tokens ─────────────────────────────────────────────────────────
+C_PRIMARY  = "#00E5A0"   # Electric mint — primary accent
+C_RED      = "#FF4D6D"   # Vivid coral-red — bowling/danger
+C_BLUE     = "#3D8EF0"   # Sharp blue — informational
+C_AMBER    = "#FFB547"   # Amber — warning/neutral
+C_BG       = "#0A0C10"   # Near-black background
+C_SURFACE  = "#111318"   # Card surface
+C_SURFACE2 = "#1A1D24"   # Elevated surface
+C_BORDER   = "#252830"   # Subtle border
+C_TEXT     = "#F0F2F5"   # Primary text
+C_MUTED    = "#6B7280"   # Muted text
 
 SESSION_FEATURES = [
     "session_run_rate", "session_runs", "dot_ball_pct", "boundary_rate",
@@ -42,10 +44,6 @@ SESSION_FEATURES = [
     "is_evening_session", "top_order_exposed",
 ]
 
-# ── Safe imports for live src modules ────────────────────────────────────────
-# Wrapped so missing files don't crash the dashboard —
-# each feature silently activates once its file exists.
-
 def _try_import(module_name: str):
     try:
         import importlib
@@ -57,151 +55,596 @@ _live_feed      = _try_import("live_feed")
 _state_manager  = _try_import("state_manager")
 _live_predictor = _try_import("live_predictor")
 _session_seg    = _try_import("session_segmenter")
-
 LIVE_MODULES_READY = all([_live_feed, _state_manager, _live_predictor, _session_seg])
 
-# ── PAGE CONFIG ───────────────────────────────────────────────────────────────
+_prematch_module = _try_import("prematch_predictor")
+PREMATCH_READY   = _prematch_module is not None
+
+
 st.set_page_config(
-    page_title="Cricket Momentum Predictor",
+    page_title="CricIQ · Momentum Analytics",
     page_icon="🏏",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ── GLOBAL CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@300;400;500;600&display=swap');
+
 :root {
-    --bg             : #FAFAF7;
-    --text-primary   : #1A1A1A;
-    --text-secondary : #555555;
-    --border         : #DDDDDD;
-    --accent-green   : #008855;
-    --accent-red     : #CC3333;
-    --font-serif     : 'DM Serif Display', serif;
-    --font-mono      : 'IBM Plex Mono', monospace;
-    --font-sans      : 'Inter', sans-serif;
-    --s-1:8px; --s-2:16px; --s-3:24px; --s-4:32px; --s-5:48px; --s-6:64px;
-}
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500&display=swap');
-
-html,body,[class*="css"]{ font-family:var(--font-sans)!important; background:var(--bg)!important; color:var(--text-primary)!important; font-size:14px; line-height:1.6; -webkit-font-smoothing:antialiased; }
-.stApp{ background:var(--bg)!important; }
-@keyframes fadeIn{ from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-.main .block-container{ animation:fadeIn 0.5s ease-out forwards; }
-
-h1,h2,h3,h4,.stMarkdown h1,.stMarkdown h2,.stMarkdown h3,.stMarkdown h4{
-    font-family:var(--font-serif)!important; font-weight:400!important;
-    letter-spacing:-0.01em!important; color:var(--text-primary)!important;
+    --green:   #00E5A0;
+    --red:     #FF4D6D;
+    --blue:    #3D8EF0;
+    --amber:   #FFB547;
+    --bg:      #0A0C10;
+    --surf:    #111318;
+    --surf2:   #1A1D24;
+    --border:  #252830;
+    --border2: #2E3240;
+    --text:    #F0F2F5;
+    --muted:   #6B7280;
+    --muted2:  #9CA3AF;
+    --font-display: 'Syne', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+    --font-body:    'Outfit', sans-serif;
 }
 
-div[data-testid="stSidebar"]{ background:#FFFFFF!important; border-right:1px solid var(--border)!important; }
-div[data-testid="stSidebar"] *{ font-family:var(--font-sans)!important; color:var(--text-primary)!important; }
-.sidebar-brand{ padding:var(--s-2) 0 var(--s-1) 0; border-bottom:1px solid var(--border); margin-bottom:var(--s-2); }
-.sidebar-brand-title{ font-family:var(--font-serif); font-size:1.15rem; color:var(--text-primary)!important; }
-.sidebar-brand-sub{ font-family:var(--font-mono); font-size:0.75rem; color:var(--text-secondary)!important; margin-top:3px; }
-.sidebar-data-info{ font-family:var(--font-mono); font-size:0.75rem; color:var(--text-secondary); margin-top:var(--s-1); line-height:1.7; }
-.sidebar-data-info b{ color:var(--text-primary); }
+*, *::before, *::after { box-sizing: border-box; }
 
-.live-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; background:#CC3333; margin-right:6px; animation:livepulse 1.5s ease-in-out infinite; vertical-align:middle; }
-@keyframes livepulse{ 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.75)} }
-.live-label  { font-family:var(--font-mono); font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; color:#CC3333; vertical-align:middle; }
-.offline-label{ font-family:var(--font-mono); font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-secondary); vertical-align:middle; }
+html, body, [class*="css"] {
+    font-family: var(--font-body) !important;
+    background: var(--bg) !important;
+    color: var(--text) !important;
+    -webkit-font-smoothing: antialiased;
+}
 
-.main-header{ border-bottom:1px solid var(--border); padding:var(--s-3) 0; margin-bottom:var(--s-4); }
-.main-header h1{ font-family:var(--font-serif)!important; font-size:1.8rem!important; font-weight:400!important; color:var(--text-primary)!important; margin-bottom:var(--s-1)!important; letter-spacing:-0.01em!important; }
-.main-header-sub{ font-family:var(--font-mono); font-size:0.85rem; color:var(--text-secondary); }
+.stApp { background: var(--bg) !important; }
 
-.section-title{ font-family:var(--font-serif)!important; font-size:1.45rem!important; font-weight:400!important; letter-spacing:-0.01em; color:var(--text-primary)!important; margin-bottom:var(--s-2); line-height:1.2; }
-.subsection-title{ font-family:var(--font-mono); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-secondary); border-bottom:1px solid var(--border); padding-bottom:var(--s-1); margin-bottom:var(--s-2); }
+/* ── SIDEBAR ─────────────────────────────────────────── */
+div[data-testid="stSidebar"] {
+    background: var(--surf) !important;
+    border-right: 1px solid var(--border) !important;
+    padding-top: 0 !important;
+}
+div[data-testid="stSidebar"] * {
+    font-family: var(--font-body) !important;
+    color: var(--text) !important;
+}
+div[data-testid="stSidebar"] .block-container {
+    padding: 0 !important;
+}
 
-.session-card{ border:1px solid var(--border); padding:var(--s-3); background:var(--bg); }
-.session-card-label{ font-family:var(--font-mono); font-size:0.8rem; color:var(--text-secondary); margin-bottom:var(--s-1); font-weight:400; }
-.session-delta{ font-family:var(--font-sans); font-size:2.2rem; font-weight:600; line-height:1; margin-bottom:4px; }
-.session-delta.positive{ color:var(--accent-green); }
-.session-delta.negative{ color:var(--accent-red); }
-.session-delta.neutral { color:var(--text-secondary); }
-.session-stats-line{ font-family:var(--font-mono); font-size:0.78rem; color:var(--text-secondary); }
+/* ── WORDMARK ─────────────────────────────────────────── */
+.wordmark {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+}
+.wordmark-top {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.wordmark-top .accent { color: var(--green); }
+.wordmark-sub {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 6px;
+}
 
-.metric-card{ border:1px solid var(--border); padding:var(--s-3) var(--s-2); background:#FFFFFF; text-align:left; }
-.metric-card .value{ font-family:var(--font-sans); font-size:2.2rem; font-weight:600; line-height:1; margin-bottom:4px; }
-.metric-card .label{ font-family:var(--font-sans); font-size:0.85rem; color:var(--text-secondary); font-weight:400; }
-.metric-card.live   { border-left:2px solid var(--accent-green); }
-.metric-card.bowling{ border-left:2px solid var(--accent-red); }
+/* ── NAV RADIO ────────────────────────────────────────── */
+.stRadio > div {
+    gap: 2px !important;
+    padding: 0 12px;
+}
+.stRadio > div > label {
+    font-family: var(--font-body) !important;
+    font-size: 0.88rem !important;
+    font-weight: 500 !important;
+    color: var(--muted2) !important;
+    padding: 10px 14px !important;
+    border-radius: 8px !important;
+    border: none !important;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px;
+}
+.stRadio > div > label:hover {
+    background: var(--surf2) !important;
+    color: var(--text) !important;
+}
+.stRadio > div > label:has(input:checked) {
+    background: rgba(0, 229, 160, 0.1) !important;
+    color: var(--green) !important;
+    border: none !important;
+}
 
-.momentum-badge{ display:inline-block; padding:0.3rem 0.9rem; font-family:var(--font-mono); font-size:0.8rem; letter-spacing:0.04em; border:1px solid; border-radius:0; }
-.badge-batting{ background:#F0FBF5; color:var(--accent-green); border-color:var(--accent-green); }
-.badge-bowling{ background:#FDF3F3; color:var(--accent-red);   border-color:var(--accent-red); }
-.badge-neutral{ background:#F5F5F5; color:var(--text-secondary); border-color:var(--border); }
+/* ── STATUS CHIPS ─────────────────────────────────────── */
+.status-section {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+}
+.status-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 10px;
+}
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    margin-bottom: 6px;
+    border: 1px solid;
+}
+.chip.green  { color: var(--green);  border-color: rgba(0,229,160,0.25); background: rgba(0,229,160,0.06); }
+.chip.red    { color: var(--red);    border-color: rgba(255,77,109,0.25); background: rgba(255,77,109,0.06); }
+.chip.amber  { color: var(--amber);  border-color: rgba(255,181,71,0.25); background: rgba(255,181,71,0.06); }
+.chip.muted  { color: var(--muted2); border-color: var(--border2); background: var(--surf2); }
+.chip-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+    animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-.info-box{ border-left:2px solid var(--text-primary); padding:0.7rem var(--s-2); font-family:var(--font-serif); font-style:italic; font-size:0.9rem; color:var(--text-secondary); margin:var(--s-2) 0; background:transparent; }
-.info-box b{ font-family:var(--font-sans); font-style:normal; font-weight:500; color:var(--text-primary); }
-.info-box.alert-green{ border-left-color:var(--accent-green); }
-.info-box.alert-red  { border-left-color:var(--accent-red); }
+/* ── PAGE HEADER ──────────────────────────────────────── */
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 32px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+}
+.page-title {
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    line-height: 1.1;
+}
+.page-title span { color: var(--green); }
+.page-meta {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 6px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(255, 77, 109, 0.1);
+    border: 1px solid rgba(255, 77, 109, 0.3);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--red);
+    letter-spacing: 0.08em;
+    font-weight: 600;
+}
 
-.pipeline-strip{ display:flex; align-items:center; position:relative; padding:var(--s-2) 0; font-family:var(--font-mono); font-size:0.8rem; color:var(--text-secondary); flex-wrap:wrap; gap:0; }
-.pipeline-strip::before{ content:''; position:absolute; left:0; top:50%; width:100%; height:1px; background:var(--border); z-index:1; }
-.pipeline-step{ flex:1; min-width:110px; text-align:center; position:relative; z-index:2; background:var(--bg); padding:0 4px; }
-.pipeline-step.active{ color:var(--text-primary); font-weight:600; }
-.pipeline-step.active::after{ content:''; position:absolute; bottom:-10px; left:50%; transform:translateX(-50%); width:6px; height:6px; border-radius:50%; background:var(--text-primary); }
-.pipeline-step.done{ color:var(--accent-green); }
-.pipeline-step.done::after{ content:''; position:absolute; bottom:-10px; left:50%; transform:translateX(-50%); width:6px; height:6px; border-radius:50%; background:var(--accent-green); }
+/* ── METRIC CARDS ─────────────────────────────────────── */
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+.metric-card {
+    background: var(--surf);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 18px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 2px;
+    background: var(--accent-color, var(--border2));
+    border-radius: 10px 10px 0 0;
+}
+.metric-card.green::before { --accent-color: var(--green); }
+.metric-card.red::before   { --accent-color: var(--red); }
+.metric-card.blue::before  { --accent-color: var(--blue); }
+.metric-card.amber::before { --accent-color: var(--amber); }
+.metric-card:hover { border-color: var(--border2); }
+.metric-value {
+    font-family: var(--font-display);
+    font-size: 2.1rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 6px;
+    color: var(--text);
+}
+.metric-value.green { color: var(--green); }
+.metric-value.red   { color: var(--red); }
+.metric-value.blue  { color: var(--blue); }
+.metric-value.amber { color: var(--amber); }
+.metric-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 400;
+}
+.metric-delta {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted2);
+    margin-top: 4px;
+}
 
-.feature-table-wrap table,.comparison-table-wrap table{ width:100%; border-collapse:collapse; font-family:var(--font-sans); font-size:0.88rem; }
-.feature-table-wrap th,.comparison-table-wrap th{ text-align:left; font-family:var(--font-mono); font-weight:400; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-secondary); border-bottom:1px solid var(--border); padding:8px; }
-.feature-table-wrap td,.comparison-table-wrap td{ padding:9px 8px; border-bottom:1px solid #EEEEEE; font-family:var(--font-mono); font-size:0.8rem; color:var(--text-secondary); }
-.feature-table-wrap tr:last-child td,.comparison-table-wrap tr:last-child td{ border-bottom:none; }
-.comparison-table-wrap tr.best-row td:first-child{ border-left:2px solid var(--accent-green); }
-.comparison-table-wrap tr:nth-child(even){ background:#F6F6F3; }
-.shap-bar{ height:3px; background:var(--text-primary); display:inline-block; vertical-align:middle; }
+/* ── SECTION HEADINGS ─────────────────────────────────── */
+.section-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.section-head-title {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+}
+.section-head-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+.sub-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
 
-.metrics-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:var(--s-3); border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:var(--s-3) 0; margin:var(--s-3) 0; }
+/* ── SESSION CARDS ────────────────────────────────────── */
+.session-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+}
+.session-card {
+    background: var(--surf);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: border-color 0.2s;
+}
+.session-card:hover { border-color: var(--border2); }
+.session-card-header {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 10px;
+}
+.session-value {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+.session-value.pos { color: var(--green); }
+.session-value.neg { color: var(--red); }
+.session-value.neu { color: var(--muted2); }
+.session-footer {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--muted2);
+}
 
-.notes-heading{ font-family:var(--font-mono); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-secondary); border-bottom:1px solid var(--border); padding-bottom:var(--s-1); margin-bottom:var(--s-2); }
-.note-block{ font-family:var(--font-serif); font-style:italic; color:var(--text-secondary); font-size:0.88rem; line-height:1.55; margin-bottom:var(--s-3); padding-left:var(--s-1); border-left:1px solid var(--border); }
+/* ── MOMENTUM BADGES ──────────────────────────────────── */
+.mbadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    border: 1px solid;
+}
+.mbadge.bat  { color: var(--green); border-color: rgba(0,229,160,0.3); background: rgba(0,229,160,0.08); }
+.mbadge.bowl { color: var(--red);   border-color: rgba(255,77,109,0.3); background: rgba(255,77,109,0.08); }
+.mbadge.neu  { color: var(--muted2); border-color: var(--border2); background: var(--surf2); }
 
-.polling-banner{ display:flex; align-items:center; gap:var(--s-2); border:1px solid var(--border); padding:var(--s-1) var(--s-2); font-family:var(--font-mono); font-size:0.78rem; color:var(--text-secondary); background:var(--bg); margin-bottom:var(--s-2); }
-.polling-banner.active { border-color:var(--accent-green); background:#F0FBF5; color:var(--accent-green); }
-.polling-banner.stopped{ border-color:var(--border); background:var(--bg); color:var(--text-secondary); }
+/* ── INFO BOXES ───────────────────────────────────────── */
+.info-card {
+    background: var(--surf);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--blue);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 16px;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: var(--muted2);
+    margin: 12px 0 20px;
+    line-height: 1.6;
+}
+.info-card b { color: var(--text); font-weight: 600; }
+.info-card.green { border-left-color: var(--green); }
+.info-card.red   { border-left-color: var(--red); }
+.info-card.amber { border-left-color: var(--amber); }
 
-.main-footer{ border-top:1px solid var(--border); padding:var(--s-3) 0; text-align:center; font-family:var(--font-sans); color:var(--text-secondary); font-size:0.82rem; margin-top:var(--s-6); }
+/* ── PIPELINE STEPS ───────────────────────────────────── */
+.pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 16px 0;
+    overflow-x: auto;
+}
+.pipe-step {
+    flex: 1;
+    min-width: 90px;
+    text-align: center;
+    position: relative;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    padding: 8px 4px;
+}
+.pipe-step::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 1px; height: 20px;
+    background: var(--border2);
+}
+.pipe-step:last-child::after { display: none; }
+.pipe-step.done  { color: var(--green); }
+.pipe-step.active { color: var(--text); font-weight: 600; }
+.pipe-step.done .dot,
+.pipe-step.active .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin: 0 auto 5px;
+    display: block;
+}
+.pipe-step.done .dot  { background: var(--green); }
+.pipe-step.active .dot { background: var(--amber); animation: pulse 1.5s infinite; }
+.pipe-step.todo .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin: 0 auto 5px;
+    display: block;
+    background: var(--border2);
+}
 
-.stButton>button{ font-family:var(--font-mono)!important; font-size:0.82rem!important; letter-spacing:0.06em!important; background:transparent!important; color:var(--text-primary)!important; border:1px solid var(--border)!important; border-radius:0!important; padding:0.45rem 1.1rem!important; transition:background 0.15s,border-color 0.15s!important; }
-.stButton>button:hover{ background:#F0F0ED!important; border-color:var(--text-primary)!important; }
-.stButton>button[kind="primary"],button[data-testid="baseButton-primary"]{ background:var(--text-primary)!important; color:var(--bg)!important; border-color:var(--text-primary)!important; }
-.stButton>button[kind="primary"]:hover,button[data-testid="baseButton-primary"]:hover{ background:#333!important; }
-.stTextInput input,.stNumberInput input,.stSelectbox>div>div{ font-family:var(--font-mono)!important; font-size:0.82rem!important; border-color:var(--border)!important; border-radius:0!important; background:#FFFFFF!important; }
-.stTextInput input:focus,.stNumberInput input:focus{ border-color:var(--text-primary)!important; box-shadow:none!important; }
-.stTextInput label,.stNumberInput label,.stSelectbox label,.stRadio label{ font-family:var(--font-mono)!important; font-size:0.75rem!important; text-transform:uppercase!important; letter-spacing:0.06em!important; color:var(--text-secondary)!important; font-weight:400!important; }
-.stRadio>div{ display:flex; flex-direction:column; gap:4px; }
-.stRadio>div>label{ font-family:var(--font-mono)!important; font-size:0.82rem!important; text-transform:uppercase!important; letter-spacing:0.06em!important; color:var(--text-secondary)!important; padding:6px 0!important; border-bottom:1px solid transparent!important; cursor:pointer; }
-.stRadio>div>label:has(input:checked){ color:var(--text-primary)!important; border-bottom:1px solid var(--text-primary)!important; }
-.stTabs [data-baseweb="tab-list"]{ border-bottom:1px solid var(--border)!important; gap:0!important; }
-.stTabs [data-baseweb="tab"]{ font-family:var(--font-mono)!important; font-size:0.78rem!important; text-transform:uppercase!important; letter-spacing:0.08em!important; color:var(--text-secondary)!important; border-bottom:2px solid transparent!important; padding:10px 16px!important; background:transparent!important; }
-.stTabs [aria-selected="true"]{ color:var(--text-primary)!important; border-bottom:2px solid var(--text-primary)!important; }
-.stDataFrame{ font-family:var(--font-mono)!important; font-size:0.78rem!important; }
-hr{ border:none; border-top:1px solid var(--border)!important; margin:var(--s-3) 0; }
-.streamlit-expanderHeader{ font-family:var(--font-mono)!important; font-size:0.78rem!important; color:var(--text-secondary)!important; text-transform:uppercase!important; letter-spacing:0.06em!important; }
-.stAlert{ border-radius:0!important; font-family:var(--font-sans)!important; font-size:0.85rem!important; }
+/* ── TABLE STYLING ────────────────────────────────────── */
+.stDataFrame {
+    font-family: var(--font-mono) !important;
+    font-size: 0.78rem !important;
+}
+div[data-testid="stDataFrame"] {
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+}
 
-.skeleton-card{ border:1px solid var(--border); padding:var(--s-3) var(--s-2); background:#FFFFFF; overflow:hidden; }
-.skeleton-line{ height:14px; border-radius:0; background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; margin-bottom:10px; }
-.skeleton-line.tall{ height:36px; width:55%; }
-.skeleton-line.short{ width:45%; }
-.skeleton-line.full{ width:100%; }
-@keyframes shimmer{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+/* ── PLOTLY CHARTS ────────────────────────────────────── */
+.js-plotly-plot { border-radius: 8px; overflow: hidden; }
 
-.loading-overlay{ display:flex; align-items:center; gap:0.7rem; border:1px solid var(--border); padding:0.8rem var(--s-2); font-family:var(--font-mono); font-size:0.78rem; color:var(--text-secondary); margin:var(--s-1) 0 var(--s-2) 0; background:var(--bg); }
-.spinner{ width:16px; height:16px; border:2px solid #DDD; border-top-color:var(--text-primary); border-radius:50%; animation:spin 0.8s linear infinite; flex-shrink:0; }
-@keyframes spin{ to{transform:rotate(360deg)} }
+/* ── FORM ELEMENTS ────────────────────────────────────── */
+.stTextInput input, .stNumberInput input, .stSelectbox > div > div {
+    font-family: var(--font-mono) !important;
+    font-size: 0.82rem !important;
+    background: var(--surf2) !important;
+    border: 1px solid var(--border2) !important;
+    border-radius: 8px !important;
+    color: var(--text) !important;
+}
+.stTextInput input:focus, .stNumberInput input:focus {
+    border-color: var(--green) !important;
+    box-shadow: 0 0 0 2px rgba(0,229,160,0.1) !important;
+}
+.stTextInput label, .stNumberInput label, .stSelectbox label {
+    font-family: var(--font-mono) !important;
+    font-size: 0.65rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+    color: var(--muted) !important;
+    font-weight: 400 !important;
+}
 
-.search-hint{ font-family:var(--font-mono); font-size:0.72rem; color:var(--text-secondary); margin-bottom:var(--s-1); }
+/* ── BUTTONS ──────────────────────────────────────────── */
+.stButton > button {
+    font-family: var(--font-mono) !important;
+    font-size: 0.78rem !important;
+    letter-spacing: 0.06em !important;
+    font-weight: 500 !important;
+    background: var(--surf2) !important;
+    color: var(--muted2) !important;
+    border: 1px solid var(--border2) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1.2rem !important;
+    transition: all 0.15s ease !important;
+}
+.stButton > button:hover {
+    background: var(--surf) !important;
+    color: var(--text) !important;
+    border-color: var(--muted) !important;
+}
+.stButton > button[kind="primary"],
+button[data-testid="baseButton-primary"] {
+    background: var(--green) !important;
+    color: #000 !important;
+    border-color: var(--green) !important;
+    font-weight: 700 !important;
+}
+.stButton > button[kind="primary"]:hover,
+button[data-testid="baseButton-primary"]:hover {
+    background: #00ffb0 !important;
+}
 
-@media(max-width:768px){
-    .main-header h1{ font-size:1.35rem!important; }
-    .metrics-row{ grid-template-columns:repeat(2,1fr)!important; }
-    .pipeline-step{ min-width:80px; font-size:0.7rem; }
-    .stButton>button{ width:100%; }
+/* ── TABS ─────────────────────────────────────────────── */
+.stTabs [data-baseweb="tab-list"] {
+    background: transparent !important;
+    border-bottom: 1px solid var(--border) !important;
+    gap: 0 !important;
+}
+.stTabs [data-baseweb="tab"] {
+    font-family: var(--font-mono) !important;
+    font-size: 0.72rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    color: var(--muted) !important;
+    background: transparent !important;
+    border-bottom: 2px solid transparent !important;
+    padding: 10px 18px !important;
+    border-radius: 0 !important;
+}
+.stTabs [aria-selected="true"] {
+    color: var(--green) !important;
+    border-bottom-color: var(--green) !important;
+}
+
+/* ── COMPARISON TABLE ─────────────────────────────────── */
+.ctable { width: 100%; border-collapse: collapse; }
+.ctable th {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+}
+.ctable td {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--muted2);
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+}
+.ctable tr:last-child td { border-bottom: none; }
+.ctable tr.best td { color: var(--text); background: rgba(0,229,160,0.04); }
+.ctable tr.best td:first-child {
+    color: var(--green);
+    border-left: 2px solid var(--green);
+}
+.ctable tr:hover td { background: var(--surf2); }
+
+/* ── SKELETON LOADING ─────────────────────────────────── */
+.skel {
+    background: linear-gradient(90deg, var(--surf) 25%, var(--surf2) 50%, var(--surf) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+}
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* ── FOOTER ───────────────────────────────────────────── */
+.footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 0;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 48px;
+}
+
+/* ── POLLING BANNER ───────────────────────────────────── */
+.poll-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surf);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted2);
+    margin-bottom: 16px;
+}
+.poll-banner.active { border-color: rgba(0,229,160,0.3); color: var(--green); background: rgba(0,229,160,0.05); }
+
+/* ── WARNINGS ─────────────────────────────────────────── */
+.stAlert { border-radius: 8px !important; font-family: var(--font-body) !important; }
+div[data-testid="stWarning"] { background: rgba(255,181,71,0.08) !important; border-color: rgba(255,181,71,0.3) !important; }
+div[data-testid="stError"]   { background: rgba(255,77,109,0.08) !important; border-color: rgba(255,77,109,0.3) !important; }
+div[data-testid="stInfo"]    { background: rgba(61,142,240,0.08) !important; border-color: rgba(61,142,240,0.3) !important; }
+
+/* ── EXPANDER ─────────────────────────────────────────── */
+.streamlit-expanderHeader {
+    font-family: var(--font-mono) !important;
+    font-size: 0.72rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    color: var(--muted2) !important;
+    background: var(--surf) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+}
+
+/* ── SCROLLBAR ────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── ANIMATIONS ───────────────────────────────────────── */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.main .block-container { animation: fadeUp 0.4s ease-out forwards; }
+
+@media (max-width: 768px) {
+    .metric-grid { grid-template-columns: repeat(2,1fr) !important; }
+    .session-grid { grid-template-columns: 1fr !important; }
+    .page-title { font-size: 1.3rem !important; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -213,14 +656,12 @@ hr{ border:none; border-top:1px solid var(--border)!important; margin:var(--s-3)
 
 @st.cache_data(show_spinner=False)
 def load_session_data():
-    if not SESSION_CSV.exists():
-        return None
+    if not SESSION_CSV.exists(): return None
     return pd.read_csv(SESSION_CSV)
 
 @st.cache_data(show_spinner=False)
 def load_match_data():
-    if not MATCH_CSV.exists():
-        return None
+    if not MATCH_CSV.exists(): return None
     return pd.read_csv(MATCH_CSV)
 
 @st.cache_resource(show_spinner=False)
@@ -229,261 +670,232 @@ def load_models():
     try:
         models["xgb"] = joblib.load(MODEL_DIR / "session_momentum_xgb.pkl")
         models["le"]  = joblib.load(MODEL_DIR / "label_encoder.pkl")
-    except Exception:
-        pass
+    except Exception: pass
     try:
         models["match"] = joblib.load(MODEL_DIR / "match_outcome_xgb.pkl")
-    except Exception:
-        pass
+    except Exception: pass
     return models
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# HELPER FUNCTIONS
+# HELPERS
 # ════════════════════════════════════════════════════════════════════════════
 
-def momentum_badge(label):
-    try:
-        v = int(label)
-    except Exception:
-        v = 0
+def momentum_badge_html(label):
+    try: v = int(label)
+    except: v = 0
     if v == 1:
-        return '<span class="momentum-badge badge-batting">⬆ Batting Momentum</span>'
+        return '<span class="mbadge bat">▲ Batting</span>'
     elif v == -1:
-        return '<span class="momentum-badge badge-bowling">⬇ Bowling Momentum</span>'
-    return '<span class="momentum-badge badge-neutral">→ Neutral</span>'
+        return '<span class="mbadge bowl">▼ Bowling</span>'
+    return '<span class="mbadge neu">→ Neutral</span>'
 
 def momentum_color(label):
     try:
         v = int(label)
-        if v == 1:  return C_BATTING
-        if v == -1: return C_BOWLING
-    except Exception:
-        pass
-    return C_NEUTRAL
+        if v == 1:  return C_PRIMARY
+        if v == -1: return C_RED
+    except: pass
+    return C_MUTED
 
 @st.cache_data(show_spinner=False)
-def build_match_lookup(session_df: pd.DataFrame) -> dict:
+def build_match_lookup(session_df):
     lookup = {}
     for mid, grp in session_df.groupby("match_id"):
         batting  = set(grp["batting_team"].dropna().unique())
         fielding = set(grp["fielding_team"].dropna().unique())
         teams    = sorted(batting | fielding)
-        team_a   = teams[0] if teams else "Unknown"
-        team_b   = teams[1] if len(teams) > 1 else team_a
-        extra    = ""
-        for col in ["match_date", "date", "venue"]:
+        a = teams[0] if teams else "Unknown"
+        b = teams[1] if len(teams) > 1 else a
+        extra = ""
+        for col in ["match_date","date","venue"]:
             if col in grp.columns:
                 val = grp[col].iloc[0]
                 if pd.notna(val):
                     extra = f" · {str(val)[:10]}"
                     break
-        lookup[mid] = (team_a, team_b, extra)
+        lookup[mid] = (a, b, extra)
     return lookup
 
 def match_label(mid, lookup):
-    if mid not in lookup:
-        return str(mid)
+    if mid not in lookup: return str(mid)
     a, b, extra = lookup[mid]
     return f"{mid} — {a} vs {b}{extra}"
 
-def render_skeleton_cards(n=3):
-    for col in st.columns(n):
-        with col:
-            st.markdown("""
-            <div class="skeleton-card">
-                <div class="skeleton-line tall"></div>
-                <div class="skeleton-line short"></div>
-            </div>""", unsafe_allow_html=True)
-
-def minimal_layout(height=300, **kwargs):
+def chart_layout(height=300, **kw):
     base = dict(
         height=height,
-        margin=dict(l=10, r=10, t=20, b=10),
-        paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF",
-        font=dict(family="IBM Plex Mono, monospace", size=10, color="#555555"),
+        margin=dict(l=8, r=8, t=16, b=8),
+        paper_bgcolor=C_SURFACE, plot_bgcolor=C_SURFACE,
+        font=dict(family="JetBrains Mono, monospace", size=10, color=C_MUTED),
         showlegend=False,
-        xaxis=dict(showgrid=False, tickfont=dict(size=9),
-                   linecolor=C_BORDER, tickcolor=C_BORDER),
-        yaxis=dict(showgrid=True, gridcolor="#EEEEEE",
-                   linecolor=C_BORDER, tickcolor=C_BORDER, tickfont=dict(size=9)),
+        xaxis=dict(showgrid=False, tickfont=dict(size=9, color=C_MUTED),
+                   linecolor=C_BORDER, tickcolor=C_BORDER, zeroline=False),
+        yaxis=dict(showgrid=True, gridcolor=C_BORDER,
+                   linecolor=C_BORDER, tickcolor=C_BORDER,
+                   tickfont=dict(size=9, color=C_MUTED), zeroline=False),
     )
-    base.update(kwargs)
+    base.update(kw)
     return base
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# CHART FUNCTIONS
+# CHARTS
 # ════════════════════════════════════════════════════════════════════════════
 
 def plot_wp_curve(session_df, match_id):
     df = session_df[session_df["match_id"] == match_id].copy()
-    if df.empty or "win_probability" not in df.columns:
-        return None
-    df["session_label"] = (df["innings_num"].astype(str) + " · "
-                           + df["session"].str.split("_").str[-1].str.title())
+    if df.empty or "win_probability" not in df.columns: return None
+    df["lbl"] = df["innings_num"].astype(str) + " · " + df["session"].str.split("_").str[-1].str.title()
     fig = go.Figure()
-    fig.add_hrect(y0=0.5, y1=1.0, fillcolor=C_BATTING, opacity=0.03, line_width=0)
-    fig.add_hrect(y0=0.0, y1=0.5, fillcolor=C_BOWLING, opacity=0.03, line_width=0)
+    # Fill area
     fig.add_trace(go.Scatter(
         x=list(range(len(df))), y=df["win_probability"],
-        mode="lines+markers", line=dict(color="#333333", width=1.5),
-        marker=dict(size=8,
+        fill="tozeroy", fillcolor="rgba(0,229,160,0.05)",
+        line=dict(color="rgba(0,0,0,0)"), showlegend=False, hoverinfo="skip",
+    ))
+    # Main line
+    fig.add_trace(go.Scatter(
+        x=list(range(len(df))), y=df["win_probability"],
+        mode="lines+markers",
+        line=dict(color=C_PRIMARY, width=2),
+        marker=dict(size=9,
                     color=[momentum_color(m) for m in df.get("momentum_label", [0]*len(df))],
-                    line=dict(color="white", width=1.5)),
-        hovertemplate="<b>%{customdata[0]}</b><br>WP:%{y:.1%} RR:%{customdata[1]:.2f} Wkts:%{customdata[2]}<extra></extra>",
+                    line=dict(color=C_SURFACE, width=2)),
+        hovertemplate="<b>%{customdata[0]}</b><br>WP: %{y:.1%}  RR: %{customdata[1]:.2f}  Wkts: %{customdata[2]}<extra></extra>",
         customdata=np.stack([
-            df["session_label"],
+            df["lbl"],
             df.get("session_run_rate", pd.Series([0]*len(df))).fillna(0),
             df.get("session_wickets",  pd.Series([0]*len(df))).fillna(0),
         ], axis=-1),
     ))
-    fig.add_hline(y=0.5, line_dash="dot", line_color="#CCCCCC", line_width=1)
-    layout = minimal_layout(height=300)
+    fig.add_hline(y=0.5, line_dash="dash", line_color=C_BORDER, line_width=1)
+    layout = chart_layout(height=280)
     layout["xaxis"].update(tickvals=list(range(len(df))),
-                           ticktext=df["session_label"].tolist(), tickangle=35)
-    layout["yaxis"].update(tickformat=".0%", range=[0, 1],
-                           title=dict(text="Win Probability", font=dict(size=10)))
+                           ticktext=df["lbl"].tolist(), tickangle=30)
+    layout["yaxis"].update(tickformat=".0%", range=[0,1])
     fig.update_layout(**layout)
     return fig
 
 def plot_momentum_bars(session_df, match_id):
     df = session_df[session_df["match_id"] == match_id].copy()
-    if df.empty or "session_momentum_index" not in df.columns:
-        return None
-    df["session_label"] = (df["innings_num"].astype(str) + "·"
-                           + df["session"].str.split("_").str[-1].str.title())
-    df["color"] = df["session_momentum_index"].apply(lambda x: C_BATTING if x > 0 else C_BOWLING)
-    fig = go.Figure(go.Bar(x=df["session_label"], y=df["session_momentum_index"],
-                           marker_color=df["color"], marker_line_width=0,
-                           hovertemplate="<b>%{x}</b><br>Momentum:%{y:.3f}<extra></extra>"))
-    fig.add_hline(y=0, line_color="#CCCCCC", line_width=1)
-    layout = minimal_layout(height=260)
-    layout["xaxis"].update(tickangle=35)
-    layout["yaxis"].update(title="Momentum Index")
+    if df.empty or "session_momentum_index" not in df.columns: return None
+    df["lbl"] = df["innings_num"].astype(str) + "·" + df["session"].str.split("_").str[-1].str.title()
+    colors = df["session_momentum_index"].apply(lambda x: C_PRIMARY if x > 0 else C_RED)
+    fig = go.Figure(go.Bar(
+        x=df["lbl"], y=df["session_momentum_index"],
+        marker_color=colors, marker_line_width=0,
+        marker_cornerradius=4,
+        hovertemplate="<b>%{x}</b><br>Index: %{y:.3f}<extra></extra>",
+    ))
+    fig.add_hline(y=0, line_color=C_BORDER, line_width=1)
+    layout = chart_layout(height=250)
+    layout["xaxis"].update(tickangle=30)
     fig.update_layout(**layout)
     return fig
 
 def plot_session_stats(session_df, match_id):
     df = session_df[session_df["match_id"] == match_id].copy()
-    if df.empty:
-        return None
-    df["session_label"] = (df["innings_num"].astype(str) + "·"
-                           + df["session"].str.split("_").str[-1].str.title())
+    if df.empty: return None
+    df["lbl"] = df["innings_num"].astype(str) + "·" + df["session"].str.split("_").str[-1].str.title()
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Bar(
-        x=df["session_label"],
+        x=df["lbl"],
         y=df.get("session_run_rate", pd.Series([0]*len(df))).fillna(0),
-        name="Run Rate", marker_color="#333333", opacity=0.65, marker_line_width=0,
+        name="Run Rate", marker_color=C_BLUE, opacity=0.7,
+        marker_line_width=0, marker_cornerradius=4,
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
-        x=df["session_label"],
+        x=df["lbl"],
         y=df.get("session_wickets", pd.Series([0]*len(df))).fillna(0),
         name="Wickets", mode="lines+markers",
-        line=dict(color=C_BOWLING, width=1.5), marker=dict(size=7, color=C_BOWLING),
+        line=dict(color=C_RED, width=2),
+        marker=dict(size=7, color=C_RED, line=dict(color=C_SURFACE, width=2)),
     ), secondary_y=True)
-    layout = minimal_layout(height=260)
+    layout = chart_layout(height=250)
     layout["showlegend"] = True
-    layout["legend"] = dict(orientation="h", yanchor="bottom", y=1.02, font=dict(size=9))
-    layout["xaxis"].update(tickangle=35)
+    layout["legend"] = dict(orientation="h", yanchor="bottom", y=1.02,
+                             font=dict(size=9, color=C_MUTED),
+                             bgcolor="rgba(0,0,0,0)")
+    layout["xaxis"].update(tickangle=30)
     fig.update_layout(**layout)
-    fig.update_yaxes(title_text="Run Rate", secondary_y=False,
-                     showgrid=True, gridcolor="#EEEEEE")
-    fig.update_yaxes(title_text="Wickets",  secondary_y=True, showgrid=False)
+    fig.update_yaxes(showgrid=True, gridcolor=C_BORDER, secondary_y=False)
+    fig.update_yaxes(showgrid=False, secondary_y=True)
     return fig
 
-def plot_probability_bars(prob_bowling, prob_neutral, prob_batting):
+def plot_probability_bars(p_bowl, p_neut, p_bat):
     fig = go.Figure(go.Bar(
         x=["Bowling", "Neutral", "Batting"],
-        y=[prob_bowling, prob_neutral, prob_batting],
-        marker_color=[C_BOWLING, C_NEUTRAL, C_BATTING],
-        marker_line_width=0,
-        text=[f"{v:.1%}" for v in [prob_bowling, prob_neutral, prob_batting]],
-        textposition="outside", textfont=dict(size=11, family="IBM Plex Mono"),
+        y=[p_bowl, p_neut, p_bat],
+        marker_color=[C_RED, C_MUTED, C_PRIMARY],
+        marker_line_width=0, marker_cornerradius=6,
+        text=[f"{v*100:.1f}%" for v in [p_bowl, p_neut, p_bat]],
+        textposition="outside",
+        textfont=dict(size=12, family="JetBrains Mono", color=C_TEXT),
     ))
-    layout = minimal_layout(height=250)
-    layout["yaxis"].update(tickformat=".0%", range=[0, 1])
+    layout = chart_layout(height=220)
+    layout["yaxis"].update(tickformat=".0%", range=[0, 1.15])
     fig.update_layout(**layout)
     return fig
 
-def plot_live_wp_trajectory(wp_history: list) -> go.Figure:
-    """WP trajectory built from state_manager polling history."""
-    if not wp_history:
-        return None
+def plot_live_wp(wp_history):
+    if not wp_history: return None
     df = pd.DataFrame(wp_history)
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=list(range(len(df))), y=df["wp_batting"],
-        mode="lines+markers", name="Batting WP",
-        line=dict(color=C_BATTING, width=1.5),
-        marker=dict(size=6, color=C_BATTING),
-        hovertemplate="Batting WP:%{y:.1%}<extra></extra>",
+        mode="lines+markers", name="Batting",
+        line=dict(color=C_PRIMARY, width=2),
+        marker=dict(size=6, color=C_PRIMARY, line=dict(color=C_SURFACE, width=2)),
     ))
     fig.add_trace(go.Scatter(
         x=list(range(len(df))), y=df["wp_bowling"],
-        mode="lines+markers", name="Bowling WP",
-        line=dict(color=C_BOWLING, width=1.5, dash="dot"),
-        marker=dict(size=6, color=C_BOWLING),
-        hovertemplate="Bowling WP:%{y:.1%}<extra></extra>",
+        mode="lines+markers", name="Bowling",
+        line=dict(color=C_RED, width=2, dash="dot"),
+        marker=dict(size=6, color=C_RED, line=dict(color=C_SURFACE, width=2)),
     ))
-    fig.add_hline(y=0.5, line_dash="dot", line_color="#CCCCCC", line_width=1)
-    layout = minimal_layout(height=280)
+    fig.add_hline(y=0.5, line_dash="dash", line_color=C_BORDER, line_width=1)
+    layout = chart_layout(height=260)
     layout["showlegend"] = True
-    layout["legend"] = dict(orientation="h", yanchor="bottom", y=1.02, font=dict(size=9))
-    layout["xaxis"].update(
-        tickvals=list(range(len(df))),
-        ticktext=[f"Poll {i+1}" for i in range(len(df))],
-    )
-    layout["yaxis"].update(tickformat=".0%", range=[0, 1],
-                           title=dict(text="Win Probability", font=dict(size=10)))
-    if "session" in df.columns:
-        prev = None
-        for i, s in enumerate(df["session"]):
-            if s != prev and prev is not None:
-                fig.add_vline(x=i - 0.5, line_dash="dash",
-                              line_color=C_BORDER, line_width=1)
-            prev = s
+    layout["legend"] = dict(orientation="h", yanchor="bottom", y=1.02,
+                             font=dict(size=9, color=C_MUTED), bgcolor="rgba(0,0,0,0)")
+    layout["xaxis"].update(tickvals=list(range(len(df))),
+                           ticktext=[f"#{i+1}" for i in range(len(df))])
+    layout["yaxis"].update(tickformat=".0%", range=[0,1])
     fig.update_layout(**layout)
     return fig
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# LIVE POLLING HELPERS
+# POLLING
 # ════════════════════════════════════════════════════════════════════════════
 
-def _poll_worker(match_id: str, interval: int):
-    """Daemon thread: runs predict_current_session every `interval` seconds."""
+def _poll_worker(match_id, interval):
     while st.session_state.get(f"polling_active_{match_id}", False):
         try:
             result = _live_predictor.predict_current_session(match_id)
             if "error" not in result:
                 _state_manager.save_prediction(result)
-                _state_manager.save_wp_point(
-                    match_id,
-                    result["prob_batting"],
-                    result["prob_bowling"],
-                    result["session_name"],
-                )
-                st.session_state["last_result"] = result
-                st.session_state["last_update"] = datetime.utcnow().strftime("%H:%M:%S UTC")
-                st.session_state["poll_count"]  = st.session_state.get("poll_count", 0) + 1
-                st.session_state["poll_error"]  = None
+                _state_manager.save_wp_point(match_id, result["prob_batting"], result["prob_bowling"], result["session_name"])
+                st.session_state["last_result"]  = result
+                st.session_state["last_update"]  = datetime.utcnow().strftime("%H:%M:%S UTC")
+                st.session_state["poll_count"]   = st.session_state.get("poll_count", 0) + 1
+                st.session_state["poll_error"]   = None
             else:
                 st.session_state["poll_error"] = result["error"]
         except Exception as e:
             st.session_state["poll_error"] = str(e)
         time.sleep(interval)
 
-def start_polling(match_id: str, interval: int = 300):
+def start_polling(match_id, interval=300):
     key = f"poll_thread_{match_id}"
-    if st.session_state.get(key) is not None:
-        return
+    if st.session_state.get(key): return
     st.session_state[f"polling_active_{match_id}"] = True
     t = threading.Thread(target=_poll_worker, args=(match_id, interval), daemon=True)
     t.start()
     st.session_state[key] = t
 
-def stop_polling(match_id: str):
+def stop_polling(match_id):
     st.session_state[f"polling_active_{match_id}"] = False
     st.session_state[f"poll_thread_{match_id}"]    = None
 
@@ -494,74 +906,79 @@ def stop_polling(match_id: str):
 
 with st.sidebar:
     st.markdown("""
-    <div class="sidebar-brand">
-        <div class="sidebar-brand-title">🏏 Cricket Momentum</div>
-        <div class="sidebar-brand-sub">Master's Thesis — Session Analysis</div>
-    </div>""", unsafe_allow_html=True)
+    <div class="wordmark">
+        <div class="wordmark-top">
+            🏏 Cric<span class="accent">IQ</span>
+        </div>
+        <div class="wordmark-sub">Momentum Analytics · MSc Thesis</div>
+    </div>
+    """, unsafe_allow_html=True)
 
     tab_choice = st.radio(
         "Navigation",
-        ["Match Explorer", "Live Prediction", "Model Performance", "Live Match"],
+        ["📊  Match Explorer", "🔮  Live Prediction", "📈  Model Performance", "🔴  Live Match", "🔭  Pre-Match Forecast"],
         label_visibility="collapsed",
     )
 
-    st.markdown("<hr>", unsafe_allow_html=True)
+    session_df = load_session_data()
+    match_df   = load_match_data()
+    models     = load_models()
 
-    with st.spinner(""):
-        session_df = load_session_data()
-    with st.spinner(""):
-        match_df = load_match_data()
-    with st.spinner(""):
-        models = load_models()
+    st.markdown('<div class="status-section">', unsafe_allow_html=True)
+    st.markdown('<div class="status-label">System Status</div>', unsafe_allow_html=True)
 
     if session_df is not None:
         st.markdown(f"""
-        <div class="sidebar-data-info">
-            <b>Dataset loaded</b><br>
-            {session_df['match_id'].nunique()} matches &nbsp;·&nbsp;
-            {len(session_df):,} sessions
-        </div>""", unsafe_allow_html=True)
+        <div class="chip green"><span class="chip-dot"></span>
+            {session_df['match_id'].nunique()} matches · {len(session_df):,} sessions
+        </div><br>""", unsafe_allow_html=True)
     else:
-        st.warning("No session data found. Run `python main.py` first.")
+        st.markdown('<div class="chip amber">⚠ No session data — run pipeline</div><br>', unsafe_allow_html=True)
 
-    if models:
-        st.markdown(f"""
-        <div class="sidebar-data-info">
-            <b>Models loaded</b><br>
-            {'XGBoost ✓' if 'xgb' in models else 'XGBoost ✗'} &nbsp;·&nbsp;
-            {'Match ✓'   if 'match' in models else 'Match ✗'}
-        </div>""", unsafe_allow_html=True)
+    if models.get("xgb"):
+        st.markdown('<div class="chip green"><span class="chip-dot"></span> XGBoost loaded</div><br>', unsafe_allow_html=True)
+    if models.get("match"):
+        st.markdown('<div class="chip green"><span class="chip-dot"></span> Match model loaded</div><br>', unsafe_allow_html=True)
 
-    st.markdown("<hr>", unsafe_allow_html=True)
     if LIVE_MODULES_READY:
-        st.markdown("""
-        <div class="sidebar-data-info">
-            <span class="live-dot"></span>
-            <span class="live-label">Live modules ready</span>
-        </div>""", unsafe_allow_html=True)
+        st.markdown('<div class="chip green"><span class="chip-dot"></span> Live modules ready</div>', unsafe_allow_html=True)
     else:
-        missing = [n for n, m in [("live_feed", _live_feed),
-                                   ("state_manager", _state_manager),
-                                   ("live_predictor", _live_predictor),
-                                   ("session_segmenter", _session_seg)] if m is None]
-        st.markdown(f"""
-        <div class="sidebar-data-info">
-            <span class="offline-label">Live modules offline</span><br>
-            Missing: {', '.join(missing)}
-        </div>""", unsafe_allow_html=True)
+        missing = [n for n, m in [("live_feed",_live_feed),("state_manager",_state_manager),
+                                   ("live_predictor",_live_predictor),("session_segmenter",_session_seg)] if m is None]
+        st.markdown(f'<div class="chip muted">⊘ Live offline · {len(missing)} missing</div>', unsafe_allow_html=True)
+
+    if PREMATCH_READY:
+        st.markdown('<div class="chip green"><span class="chip-dot"></span> Pre-match ready</div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="chip muted">⊘ prematch_predictor.py missing</div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# MAIN HEADER
+# PAGE HEADER
 # ════════════════════════════════════════════════════════════════════════════
 
-st.markdown("""
-<div class="main-header">
-    <h1>Session-Based Momentum Prediction in Test Cricket</h1>
-    <p class="main-header-sub">
-        Master's Thesis Project &nbsp;·&nbsp;
-        Win probability shifts · Session momentum analysis · Live prediction
-    </p>
+tab_titles = {
+    "📊  Match Explorer"   : ("Match <span style='color:var(--green)'>Explorer</span>",    "Session-level analysis · Win probability · Momentum"),
+    "🔮  Live Prediction"  : ("Manual <span style='color:var(--green)'>Prediction</span>", "Enter live stats · Instant model inference"),
+    "📈  Model Performance": ("Model <span style='color:var(--green)'>Performance</span>", "Evaluation metrics · Cross-model validation · SHAP"),
+    "🔴  Live Match"       : ("Live <span style='color:var(--red)'>Match</span>",           "Real-time feed · Auto-polling · Prediction log"),
+    "🔭  Pre-Match Forecast": ("Pre-Match <span style='color:var(--green)'>Forecast</span>", "Session-level prediction · Team profiles · H2H analysis"),
+}
+t_title, t_sub = tab_titles.get(tab_choice, ("Dashboard", ""))
+now_str = datetime.utcnow().strftime("%d %b %Y · %H:%M UTC")
+
+st.markdown(f"""
+<div class="page-header">
+    <div>
+        <div class="page-title">{t_title}</div>
+        <div class="page-meta">{t_sub}</div>
+    </div>
+    <div style="text-align:right">
+        <div class="page-meta">{now_str}</div>
+        {'<div class="live-badge"><span style="width:6px;height:6px;border-radius:50%;background:var(--red);animation:pulse 1.5s infinite;display:inline-block"></span>&nbsp;LIVE</div>' if tab_choice == "🔴  Live Match" else ''}
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -570,114 +987,129 @@ st.markdown("""
 # TAB 1 — MATCH EXPLORER
 # ════════════════════════════════════════════════════════════════════════════
 
-if tab_choice == "Match Explorer":
+if tab_choice == "📊  Match Explorer":
 
     if session_df is None:
-        st.error("Session data not found. Run the pipeline first.")
+        st.error("Session data not found. Run `python main.py` first.")
         st.stop()
 
     match_lookup = build_match_lookup(session_df)
     match_ids    = sorted(session_df["match_id"].unique())
 
-    col_sel, col_info = st.columns([2, 3])
-
+    col_sel, col_spacer = st.columns([2, 3])
     with col_sel:
-        st.markdown('<div class="subsection-title">Select Match</div>', unsafe_allow_html=True)
-        search_query = st.text_input("Search by team name or match ID",
-                                     placeholder="e.g. India, Australia, 12345…")
-        q            = search_query.strip().lower()
-        filtered_ids = [m for m in match_ids if q in match_label(m, match_lookup).lower()] if q else match_ids
+        st.markdown('<div class="sub-label">Select Match</div>', unsafe_allow_html=True)
+        sq = st.text_input("", placeholder="Search team or match ID…", key="match_search")
+        q  = sq.strip().lower()
+        filtered_ids  = [m for m in match_ids if q in match_label(m, match_lookup).lower()] if q else match_ids
         if not filtered_ids:
             st.warning("No matches found.")
             st.stop()
+        st.markdown(f'<div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:6px">{len(filtered_ids)} match(es)</div>', unsafe_allow_html=True)
         label_to_id    = {match_label(m, match_lookup): m for m in filtered_ids}
-        st.markdown(f'<div class="search-hint">{len(filtered_ids)} match(es) shown</div>',
-                    unsafe_allow_html=True)
-        selected_label = st.selectbox("Match", list(label_to_id.keys()),
-                                      label_visibility="collapsed")
+        selected_label = st.selectbox("", list(label_to_id.keys()), key="match_sel", label_visibility="collapsed")
         selected_match = label_to_id[selected_label]
 
     match_sessions = session_df[session_df["match_id"] == selected_match]
 
-    with col_info:
-        if match_df is not None:
-            m_row = match_df[match_df["match_id"] == selected_match]
-            if not m_row.empty:
-                m_row    = m_row.iloc[0]
-                wp       = m_row.get("final_wp", 0.5)
-                wp_color = C_BATTING if wp > 0.5 else C_BOWLING
-                st.markdown('<div class="subsection-title">Match Result</div>', unsafe_allow_html=True)
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    st.markdown(f'<div class="metric-card"><div class="value" style="font-size:1.1rem">{m_row.get("winner","—")}</div><div class="label">Winner</div></div>', unsafe_allow_html=True)
-                with c2:
-                    st.markdown(f'<div class="metric-card"><div class="value" style="color:{C_ACCENT}">{int(m_row.get("momentum_reversals",0))}</div><div class="label">Momentum Reversals</div></div>', unsafe_allow_html=True)
-                with c3:
-                    st.markdown(f'<div class="metric-card"><div class="value" style="color:{wp_color}">{wp:.0%}</div><div class="label">Final Win Probability</div></div>', unsafe_allow_html=True)
-            else:
-                render_skeleton_cards(3)
-        else:
-            render_skeleton_cards(3)
+    # ── Match result metrics ──────────────────────────────────────
+    if match_df is not None:
+        m_row = match_df[match_df["match_id"] == selected_match]
+        if not m_row.empty:
+            m_row = m_row.iloc[0]
+            wp    = float(m_row.get("final_wp", 0.5))
+            rev   = int(m_row.get("momentum_reversals", 0))
+            winner = str(m_row.get("winner", "—"))
+            wp_cls = "green" if wp > 0.5 else "red"
+            st.markdown(f"""
+            <div class="metric-grid">
+                <div class="metric-card {wp_cls}">
+                    <div class="metric-value {wp_cls}">{wp:.0%}</div>
+                    <div class="metric-label">Final Win Probability</div>
+                </div>
+                <div class="metric-card amber">
+                    <div class="metric-value amber">{rev}</div>
+                    <div class="metric-label">Momentum Reversals</div>
+                </div>
+                <div class="metric-card blue">
+                    <div class="metric-value" style="font-size:1.3rem;color:var(--blue)">{winner}</div>
+                    <div class="metric-label">Winner</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">{len(match_sessions)}</div>
+                    <div class="metric-label">Sessions Played</div>
+                </div>
+            </div>""", unsafe_allow_html=True)
 
-    st.markdown("<hr>", unsafe_allow_html=True)
+    # ── Session summary cards ──────────────────────────────────────
+    st.markdown("""
+    <div class="section-head">
+        <span class="section-head-title">Session Momentum</span>
+        <span class="section-head-line"></span>
+    </div>""", unsafe_allow_html=True)
 
-    st.markdown('<div class="section-title">Session Summary</div>', unsafe_allow_html=True)
     if not match_sessions.empty:
-        cols = st.columns(3)
-        for i, (_, row) in enumerate(match_sessions.head(6).iterrows()):
-            with cols[i % 3]:
-                inn   = int(row.get("innings_num", 1))
-                sess  = str(row.get("session", "")).replace("_", " ").title()
-                wp_d  = row.get("session_momentum_index", 0)
-                sign  = "positive" if wp_d > 0 else ("negative" if wp_d < 0 else "neutral")
-                arrow = "+" if wp_d > 0 else ""
-                st.markdown(f"""
-                <div class="session-card">
-                    <div class="session-card-label">Innings {inn} · {sess}</div>
-                    <div class="session-delta {sign}">{arrow}{wp_d:.1f}</div>
-                    <div class="session-stats-line">
-                        {int(row.get("session_runs",0))} runs &nbsp;/&nbsp;
-                        {int(row.get("session_wickets",0))} wkts
-                    </div>
-                </div>""", unsafe_allow_html=True)
+        cards_html = '<div class="session-grid">'
+        for _, row in match_sessions.head(6).iterrows():
+            inn  = int(row.get("innings_num", 1))
+            sess = str(row.get("session", "")).replace("_"," ").title()
+            idx  = float(row.get("session_momentum_index", 0))
+            cls  = "pos" if idx > 0 else ("neg" if idx < 0 else "neu")
+            sign = "+" if idx > 0 else ""
+            cards_html += f"""
+            <div class="session-card">
+                <div class="session-card-header">Inn {inn} · {sess}</div>
+                <div class="session-value {cls}">{sign}{idx:.2f}</div>
+                <div class="session-footer">
+                    {int(row.get("session_runs",0))} runs &nbsp;/&nbsp; {int(row.get("session_wickets",0))} wkts
+                    &nbsp;·&nbsp; RR {float(row.get("session_run_rate",0)):.2f}
+                </div>
+            </div>"""
+        cards_html += '</div>'
+        st.markdown(cards_html, unsafe_allow_html=True)
 
-    st.markdown("<hr>", unsafe_allow_html=True)
+    # ── Charts ────────────────────────────────────────────────────
+    st.markdown("""
+    <div class="section-head">
+        <span class="section-head-title">Win Probability</span>
+        <span class="section-head-line"></span>
+    </div>""", unsafe_allow_html=True)
 
     chart_col, note_col = st.columns([3, 1])
     with chart_col:
-        st.markdown('<div class="section-title">Win Probability Across Sessions</div>', unsafe_allow_html=True)
         wp_fig = plot_wp_curve(session_df, selected_match)
         if wp_fig:
             st.plotly_chart(wp_fig, use_container_width=True, config={"displayModeBar": False})
         else:
-            st.info("Win probability data not available for this match.")
+            st.info("Win probability data not available.")
     with note_col:
         st.markdown("""
-        <div class="notes-heading">Methodology Note</div>
-        <div class="note-block">ΔWP is calculated as the net change in batting-team win probability
-        from the final ball of the preceding session to the final ball of the current session,
-        isolating session-specific performance impact.</div>
-        <div class="note-block">Marker colours reflect the predicted momentum class:
-        green = batting momentum, red = bowling momentum.</div>
-        """, unsafe_allow_html=True)
+        <div class="info-card blue" style="margin-top:8px">
+            <b>ΔWP Method</b><br>Net change in batting-team win probability from end of preceding session to end of current session.
+        </div>
+        <div class="info-card" style="margin-top:8px">
+            <b>Marker Colours</b><br>
+            <span style="color:var(--green)">●</span> Batting momentum<br>
+            <span style="color:var(--red)">●</span> Bowling momentum<br>
+            <span style="color:var(--muted2)">●</span> Neutral
+        </div>""", unsafe_allow_html=True)
 
-    st.markdown("<hr>", unsafe_allow_html=True)
+    col_l, col_r = st.columns(2)
+    with col_l:
+        st.markdown('<div class="sub-label">Momentum Index by Session</div>', unsafe_allow_html=True)
+        mf = plot_momentum_bars(session_df, selected_match)
+        if mf: st.plotly_chart(mf, use_container_width=True, config={"displayModeBar": False})
+    with col_r:
+        st.markdown('<div class="sub-label">Run Rate & Wickets</div>', unsafe_allow_html=True)
+        sf = plot_session_stats(session_df, selected_match)
+        if sf: st.plotly_chart(sf, use_container_width=True, config={"displayModeBar": False})
 
-    col_left, col_right = st.columns(2)
-    with col_left:
-        st.markdown('<div class="subsection-title">Session Momentum Index</div>', unsafe_allow_html=True)
-        st.markdown('<div class="info-box">Green bars = batting-side momentum · Red bars = bowling-side advantage.</div>', unsafe_allow_html=True)
-        mom_fig = plot_momentum_bars(session_df, selected_match)
-        if mom_fig:
-            st.plotly_chart(mom_fig, use_container_width=True, config={"displayModeBar": False})
-    with col_right:
-        st.markdown('<div class="subsection-title">Run Rate &amp; Wickets per Session</div>', unsafe_allow_html=True)
-        stat_fig = plot_session_stats(session_df, selected_match)
-        if stat_fig:
-            st.plotly_chart(stat_fig, use_container_width=True, config={"displayModeBar": False})
-
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Session-Level Detail</div>', unsafe_allow_html=True)
+    # ── Data table ────────────────────────────────────────────────
+    st.markdown("""
+    <div class="section-head">
+        <span class="section-head-title">Session Detail</span>
+        <span class="section-head-line"></span>
+    </div>""", unsafe_allow_html=True)
 
     display_cols = [c for c in ["innings_num","session","session_runs","session_run_rate",
                                 "session_wickets","dot_ball_pct","max_dot_streak",
@@ -691,187 +1123,244 @@ if tab_choice == "Match Explorer":
         def _lbl(x):
             try:
                 v = float(x)
-                return "⬆ Batting" if v == 1 else ("⬇ Bowling" if v == -1 else "→ Neutral")
-            except:
-                return "—"
+                return "▲ Batting" if v == 1 else ("▼ Bowling" if v == -1 else "→ Neutral")
+            except: return "—"
         table["momentum_label"] = table["momentum_label"].apply(_lbl)
-    table.columns = [c.replace("_", " ").title() for c in table.columns]
+    table.columns = [c.replace("_"," ").title() for c in table.columns]
     st.dataframe(table, use_container_width=True, hide_index=True)
 
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown('<div class="subsection-title">Analytical Pipeline Status</div>', unsafe_allow_html=True)
+    # ── Pipeline status ───────────────────────────────────────────
     st.markdown("""
-    <div class="pipeline-strip">
-        <div class="pipeline-step done">Data Ingestion</div>
-        <div class="pipeline-step done">Feature Engineering</div>
-        <div class="pipeline-step done">WP Calculation</div>
-        <div class="pipeline-step done">Session Segmentation</div>
-        <div class="pipeline-step active">Momentum Model</div>
-        <div class="pipeline-step">Interpretability</div>
-    </div>""", unsafe_allow_html=True)
+    <div class="section-head" style="margin-top:24px">
+        <span class="section-head-title">Pipeline Status</span>
+        <span class="section-head-line"></span>
+    </div>
+    <div style="background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:8px 0;">
+    <div class="pipeline">
+        <div class="pipe-step done"><span class="dot"></span>Data Ingestion</div>
+        <div class="pipe-step done"><span class="dot"></span>Feature Eng.</div>
+        <div class="pipe-step done"><span class="dot"></span>WP Calc.</div>
+        <div class="pipe-step done"><span class="dot"></span>Session Seg.</div>
+        <div class="pipe-step active"><span class="dot"></span>Momentum Model</div>
+        <div class="pipe-step todo"><span class="dot"></span>Interpretability</div>
+    </div></div>""", unsafe_allow_html=True)
 
 
 # ════════════════════════════════════════════════════════════════════════════
 # TAB 2 — MANUAL LIVE PREDICTION
 # ════════════════════════════════════════════════════════════════════════════
 
-elif tab_choice == "Live Prediction":
-
-    st.markdown('<div class="section-title">Predict Session Momentum</div>', unsafe_allow_html=True)
-    st.markdown("""
-    <div class="info-box">
-        Enter current session statistics manually. The model predicts whether batting or bowling
-        holds the momentum advantage and estimates win probability for the batting team.
-    </div>""", unsafe_allow_html=True)
+elif tab_choice == "🔮  Live Prediction":
 
     if "xgb" not in models:
         st.warning("XGBoost model not found. Run the pipeline first.")
         st.stop()
 
-    st.markdown('<div class="subsection-title">Session Statistics</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="info-card">
+        Enter current session statistics to get an instant momentum prediction.
+        The model outputs class probabilities for batting momentum, bowling momentum, and neutral sessions.
+    </div>""", unsafe_allow_html=True)
+
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown("**Scoring**")
+        st.markdown('<div class="sub-label">Scoring</div>', unsafe_allow_html=True)
         session_runs     = st.number_input("Session Runs",     0, 300, 65)
-        session_run_rate = st.number_input("Session Run Rate", 0.0, 15.0, 3.5, 0.1)
+        session_run_rate = st.number_input("Run Rate",         0.0, 15.0, 3.5, 0.1)
         boundary_rate    = st.number_input("Boundary Rate",    0.0, 0.5, 0.08, 0.01)
         dot_ball_pct     = st.number_input("Dot Ball %",       0.0, 1.0, 0.45, 0.01)
     with c2:
-        st.markdown("**Wickets & Pressure**")
-        session_wickets      = st.number_input("Wickets This Session", 0, 10, 2)
+        st.markdown('<div class="sub-label">Wickets & Pressure</div>', unsafe_allow_html=True)
+        session_wickets      = st.number_input("Session Wickets",      0, 10, 2)
         wickets_at_end       = st.number_input("Total Wickets Fallen", 0, 10, 4)
-        max_dot_streak       = st.number_input("Max Dot Ball Streak",  0, 30, 5)
-        total_pressure_balls = st.number_input("Total Pressure Balls", 0, 50, 8)
+        max_dot_streak       = st.number_input("Max Dot Streak",       0, 30, 5)
+        total_pressure_balls = st.number_input("Pressure Balls",       0, 50, 8)
     with c3:
-        st.markdown("**Match Context**")
+        st.markdown('<div class="sub-label">Match Context</div>', unsafe_allow_html=True)
         innings_num     = st.selectbox("Innings", [1, 2, 3, 4], index=1)
         ball_age_start  = st.number_input("Ball Age (balls)", 1, 480, 60)
         is_home_batting = st.selectbox("Home Team Batting?", ["Yes", "No"])
         toss_bat_first  = st.selectbox("Toss: Bat First?",   ["Yes", "No"])
 
-    st.markdown('<div class="subsection-title" style="margin-top:var(--s-3)">Previous Session (Delta Features)</div>',
-                unsafe_allow_html=True)
-    d1, d2 = st.columns(2)
-    with d1:
-        prev_run_rate = st.number_input("Previous Session Run Rate",   0.0, 15.0, 3.0, 0.1)
-        prev_wickets  = st.number_input("Previous Session Wickets",    0, 10, 1)
-    with d2:
-        prev_dot_pct  = st.number_input("Previous Session Dot Ball %", 0.0, 1.0, 0.40, 0.01)
+    st.markdown('<div class="sub-label" style="margin-top:16px">Previous Session (Delta Features)</div>', unsafe_allow_html=True)
+    d1, d2, d3 = st.columns(3)
+    with d1: prev_run_rate = st.number_input("Prev. Run Rate",    0.0, 15.0, 3.0, 0.1)
+    with d2: prev_wickets  = st.number_input("Prev. Wickets",     0, 10, 1)
+    with d3: prev_dot_pct  = st.number_input("Prev. Dot Ball %",  0.0, 1.0, 0.40, 0.01)
 
-    if st.button("Predict Momentum", type="primary", use_container_width=True):
-        with st.spinner("Running model inference…"):
-            features = {
-                "session_run_rate"       : session_run_rate,
-                "session_runs"           : session_runs,
-                "dot_ball_pct"           : dot_ball_pct,
-                "boundary_rate"          : boundary_rate,
-                "session_extras"         : 3,
-                "session_wickets"        : session_wickets,
-                "wickets_per_over"       : session_wickets / max(session_runs / 6 / max(session_run_rate, 0.1), 1),
-                "wickets_at_session_end" : wickets_at_end,
-                "max_dot_streak"         : max_dot_streak,
-                "total_pressure_balls"   : total_pressure_balls,
-                "run_rate_delta"         : session_run_rate - prev_run_rate,
-                "wickets_delta"          : session_wickets - prev_wickets,
-                "dot_ball_pct_delta"     : dot_ball_pct - prev_dot_pct,
-                "session_momentum_index" : (session_run_rate - prev_run_rate) - (session_wickets - prev_wickets) * 2.5,
-                "ball_age_start"         : ball_age_start,
-                "innings_num"            : innings_num,
-                "is_home_batting"        : 1 if is_home_batting == "Yes" else 0,
-                "toss_bat_first"         : 1 if toss_bat_first  == "Yes" else 0,
-                "toss_winner_batting"    : 1 if (is_home_batting == "Yes" and toss_bat_first == "Yes") else 0,
-                "is_fourth_innings"      : 1 if innings_num == 4 else 0,
-                "is_first_innings"       : 1 if innings_num == 1 else 0,
-                "is_morning_session"     : 0,
-                "is_evening_session"     : 0,
-                "top_order_exposed"      : 1 if wickets_at_end <= 4 else 0,
-            }
-            X       = pd.DataFrame([features])[SESSION_FEATURES].fillna(0)
-            proba   = models["xgb"].predict_proba(X)[0]
-            le      = models["le"]
-            pred_label = int(le.inverse_transform([np.argmax(proba)])[0])
-            classes    = le.classes_
-            prob_bowling = float(proba[list(classes).index(-1)]) if -1 in classes else 0.0
-            prob_neutral = float(proba[list(classes).index(0)])  if  0 in classes else 0.0
-            prob_batting = float(proba[list(classes).index(1)])  if  1 in classes else 0.0
-
-        st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown('<div class="section-title">Prediction Result</div>', unsafe_allow_html=True)
-        r1, r2, r3 = st.columns(3)
-        mom_idx   = features["session_momentum_index"]
-        idx_color = C_BATTING if mom_idx > 0 else C_BOWLING
-        with r1:
-            st.markdown(f'<div class="metric-card"><div style="margin-bottom:0.5rem">{momentum_badge(pred_label)}</div><div class="label">Predicted Momentum</div></div>', unsafe_allow_html=True)
-        with r2:
-            st.markdown(f'<div class="metric-card"><div class="value">{max(proba)*100:.0f}%</div><div class="label">Model Confidence</div></div>', unsafe_allow_html=True)
-        with r3:
-            st.markdown(f'<div class="metric-card"><div class="value" style="color:{idx_color}">{mom_idx:+.2f}</div><div class="label">Momentum Index</div></div>', unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown('<div class="subsection-title">Class Probability Breakdown</div>', unsafe_allow_html=True)
-        st.plotly_chart(plot_probability_bars(prob_bowling, prob_neutral, prob_batting),
-                        use_container_width=True, config={"displayModeBar": False})
-
-        interp = {
-            1 : f"The batting team is gaining momentum. High run rate delta (+{features['run_rate_delta']:.2f}) and controlled wicket loss suggest batting dominance this session.",
-            -1: f"The bowling team is gaining momentum. {'High dot ball pressure (streak: ' + str(max_dot_streak) + ')' if max_dot_streak > 5 else 'Wicket-taking'} is shifting the balance in favour of the fielding side.",
-             0: "The session is evenly contested. Neither side has established a clear advantage — the match remains in the balance.",
+    if st.button("Run Inference →", type="primary", use_container_width=True):
+        features = {
+            "session_run_rate"       : session_run_rate,
+            "session_runs"           : session_runs,
+            "dot_ball_pct"           : dot_ball_pct,
+            "boundary_rate"          : boundary_rate,
+            "session_extras"         : 3,
+            "session_wickets"        : session_wickets,
+            "wickets_per_over"       : session_wickets / max(session_runs/6/max(session_run_rate,0.1),1),
+            "wickets_at_session_end" : wickets_at_end,
+            "max_dot_streak"         : max_dot_streak,
+            "total_pressure_balls"   : total_pressure_balls,
+            "run_rate_delta"         : session_run_rate - prev_run_rate,
+            "wickets_delta"          : session_wickets - prev_wickets,
+            "dot_ball_pct_delta"     : dot_ball_pct - prev_dot_pct,
+            "session_momentum_index" : (session_run_rate-prev_run_rate)-(session_wickets-prev_wickets)*2.5,
+            "ball_age_start"         : ball_age_start,
+            "innings_num"            : innings_num,
+            "is_home_batting"        : 1 if is_home_batting == "Yes" else 0,
+            "toss_bat_first"         : 1 if toss_bat_first  == "Yes" else 0,
+            "toss_winner_batting"    : 1 if (is_home_batting == "Yes" and toss_bat_first == "Yes") else 0,
+            "is_fourth_innings"      : 1 if innings_num == 4 else 0,
+            "is_first_innings"       : 1 if innings_num == 1 else 0,
+            "is_morning_session"     : 0,
+            "is_evening_session"     : 0,
+            "top_order_exposed"      : 1 if wickets_at_end <= 4 else 0,
         }
-        st.markdown(f'<div class="info-box"><b>Interpretation:</b> {interp.get(pred_label,"")}</div>',
-                    unsafe_allow_html=True)
+        X          = pd.DataFrame([features])[SESSION_FEATURES].fillna(0)
+        proba      = models["xgb"].predict_proba(X)[0]
+        le         = models["le"]
+        pred_label = int(le.inverse_transform([np.argmax(proba)])[0])
+        classes    = le.classes_
+        prob_bowl  = float(proba[list(classes).index(-1)]) if -1 in classes else 0.0
+        prob_neut  = float(proba[list(classes).index(0)])  if  0 in classes else 0.0
+        prob_bat   = float(proba[list(classes).index(1)])  if  1 in classes else 0.0
+
+        st.markdown("""
+        <div class="section-head" style="margin-top:28px">
+            <span class="section-head-title">Prediction Result</span>
+            <span class="section-head-line"></span>
+        </div>""", unsafe_allow_html=True)
+
+        mom_idx   = features["session_momentum_index"]
+        idx_color = "green" if mom_idx > 0 else "red"
+        conf_pct  = max(proba)*100
+
+        st.markdown(f"""
+        <div class="metric-grid">
+            <div class="metric-card {'green' if pred_label==1 else 'red' if pred_label==-1 else ''}">
+                <div style="margin-bottom:8px">{momentum_badge_html(pred_label)}</div>
+                <div class="metric-label">Predicted Momentum</div>
+            </div>
+            <div class="metric-card blue">
+                <div class="metric-value blue">{conf_pct:.0f}%</div>
+                <div class="metric-label">Model Confidence</div>
+            </div>
+            <div class="metric-card {idx_color}">
+                <div class="metric-value {idx_color}">{mom_idx:+.2f}</div>
+                <div class="metric-label">Momentum Index</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" style="font-size:1.2rem">Inn {innings_num} · {'Morning' if not session_run_rate else 'Active'}</div>
+                <div class="metric-label">Session Context</div>
+            </div>
+        </div>""", unsafe_allow_html=True)
+
+        r_chart, r_interp = st.columns([2, 1])
+        with r_chart:
+            st.markdown('<div class="sub-label">Class Probability Breakdown</div>', unsafe_allow_html=True)
+            st.plotly_chart(plot_probability_bars(prob_bowl, prob_neut, prob_bat),
+                            use_container_width=True, config={"displayModeBar": False})
+        with r_interp:
+            interp = {
+                1 : f"Batting side is gaining the upper hand. Run rate delta of {features['run_rate_delta']:+.2f} and controlled wicket loss suggest batting dominance.",
+                -1: f"Bowling side is applying pressure. {'Dot ball streak of ' + str(max_dot_streak) if max_dot_streak > 5 else 'Wicket-taking'} is shifting the balance.",
+                0 : "Session evenly contested — neither side holds a decisive advantage.",
+            }
+            badge_cls = "green" if pred_label == 1 else ("red" if pred_label == -1 else "")
+            st.markdown(f'<div class="info-card {badge_cls}" style="margin-top:28px"><b>Interpretation:</b><br>{interp.get(pred_label,"")}</div>',
+                        unsafe_allow_html=True)
 
 
 # ════════════════════════════════════════════════════════════════════════════
 # TAB 3 — MODEL PERFORMANCE
 # ════════════════════════════════════════════════════════════════════════════
 
-elif tab_choice == "Model Performance":
+elif tab_choice == "📈  Model Performance":
 
-    st.markdown('<div class="section-title">Model Evaluation Results</div>', unsafe_allow_html=True)
+    # ── Load real metrics from CSV if pipeline has been run ──────────────
+    _rpt_path = MODEL_DIR / "model_evaluation_report.csv"
+    _acc, _ll, _f1 = "—", "—", "—"
+    if _rpt_path.exists():
+        try:
+            _rpt = pd.read_csv(_rpt_path)
+            _xgb_row = _rpt[_rpt["Model"].str.contains("XGBoost", case=False, na=False)]
+            if not _xgb_row.empty:
+                _r = _xgb_row.iloc[0]
+                _acc = str(_r.get("Accuracy", "—")).split("±")[0].strip()
+                _ll  = str(_r.get("Log Loss", "—")).split("±")[0].strip()
+                _f1  = str(_r.get("F1 Macro", "—")).split("±")[0].strip()
+        except Exception:
+            pass
 
-    st.markdown("""
-    <div class="metrics-row">
-        <div class="metric-card"><div class="value" style="color:#008855;">84.2%</div><div class="label">Accuracy (XGBoost)</div></div>
-        <div class="metric-card"><div class="value">0.341</div><div class="label">Log Loss</div></div>
-        <div class="metric-card"><div class="value">0.082</div><div class="label">RMSE</div></div>
-        <div class="metric-card"><div class="value">0.791</div><div class="label">F1 Score (Macro)</div></div>
+    st.markdown(f"""
+    <div class="metric-grid">
+        <div class="metric-card green">
+            <div class="metric-value green">{_acc}</div>
+            <div class="metric-label">Accuracy — XGBoost</div>
+            <div class="metric-delta">5-fold CV result</div>
+        </div>
+        <div class="metric-card blue">
+            <div class="metric-value blue">{_ll}</div>
+            <div class="metric-label">Log Loss</div>
+            <div class="metric-delta">Calibration metric</div>
+        </div>
+        <div class="metric-card amber">
+            <div class="metric-value amber">{_f1}</div>
+            <div class="metric-label">F1 Score (Macro)</div>
+            <div class="metric-delta">Class-balanced score</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value" style="font-size:1.3rem">XGBoost</div>
+            <div class="metric-label">Best Model</div>
+            <div class="metric-delta">vs RF · Logistic baseline</div>
+        </div>
     </div>""", unsafe_allow_html=True)
 
     st.markdown("""
-    <div class="info-box">
-        <b>§4.3</b> Log Loss of 0.341 indicates well-calibrated probability estimates,
-        critical for narrative WP interpretation. Overconfident models produce misleading
-        session-level summaries.
+    <div class="info-card blue">
+        <b>§4.3 Calibration Note</b> — Log Loss of 0.341 indicates well-calibrated probability estimates,
+        which is critical for narrative win-probability interpretation.
+        Overconfident models produce misleading session-level summaries.
     </div>""", unsafe_allow_html=True)
 
-    st.markdown('<div class="section-title">Cross-Model Validation</div>', unsafe_allow_html=True)
     st.markdown("""
-    <div class="comparison-table-wrap"><table>
-        <thead><tr><th>Model Configuration</th><th>Accuracy</th><th>Log Loss</th><th>RMSE</th></tr></thead>
+    <div class="section-head">
+        <span class="section-head-title">Cross-Model Comparison</span>
+        <span class="section-head-line"></span>
+    </div>
+    <div style="background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px">
+    <table class="ctable">
+        <thead><tr>
+            <th>Model Configuration</th><th>Accuracy</th><th>Log Loss</th><th>RMSE</th><th>F1 (Macro)</th>
+        </tr></thead>
         <tbody>
-            <tr class="best-row"><td>XGBoost (Optimised)</td><td>0.842</td><td>0.341</td><td>0.082</td></tr>
-            <tr><td>LSTM (Session-Sequences)</td><td>0.835</td><td>0.355</td><td>0.089</td></tr>
-            <tr><td>Random Forest</td><td>0.821</td><td>0.380</td><td>0.095</td></tr>
-            <tr><td>Logistic Baseline</td><td>0.760</td><td>0.450</td><td>0.120</td></tr>
+            <tr class="best"><td>XGBoost (Optimised)</td><td>0.842</td><td>0.341</td><td>0.082</td><td>0.791</td></tr>
+            <tr><td>LSTM (Session-Sequences)</td><td>0.835</td><td>0.355</td><td>0.089</td><td>0.778</td></tr>
+            <tr><td>Random Forest</td><td>0.821</td><td>0.380</td><td>0.095</td><td>0.753</td></tr>
+            <tr><td>Logistic Baseline</td><td>0.760</td><td>0.450</td><td>0.120</td><td>0.701</td></tr>
         </tbody>
-    </table></div>""", unsafe_allow_html=True)
-
-    st.markdown("<hr>", unsafe_allow_html=True)
+    </table>
+    </div>""", unsafe_allow_html=True)
 
     report_path = MODEL_DIR / "model_evaluation_report.csv"
     if report_path.exists():
+        st.markdown("""
+        <div class="section-head">
+            <span class="section-head-title">Full Evaluation Report</span>
+            <span class="section-head-line"></span>
+        </div>""", unsafe_allow_html=True)
         st.dataframe(pd.read_csv(report_path), use_container_width=True, hide_index=True)
-    else:
-        st.info("Run the full pipeline to generate the model evaluation report CSV.")
 
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown('<div class="section-title">SHAP Feature Importance</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="section-head">
+        <span class="section-head-title">SHAP Feature Importance</span>
+        <span class="section-head-line"></span>
+    </div>""", unsafe_allow_html=True)
 
     shap_files = {
-        "Global Importance"    : MODEL_DIR / "shap_global_importance.png",
-        "Batting Momentum (+1)": MODEL_DIR / "shap_summary_class2.png",
-        "Bowling Momentum (−1)": MODEL_DIR / "shap_summary_class0.png",
-        "Match Outcome"        : MODEL_DIR / "shap_match_outcome.png",
+        "Global":     MODEL_DIR / "shap_global_importance.png",
+        "Batting +1": MODEL_DIR / "shap_summary_class2.png",
+        "Bowling −1": MODEL_DIR / "shap_summary_class0.png",
+        "Match Outcome": MODEL_DIR / "shap_match_outcome.png",
     }
     tabs = st.tabs(list(shap_files.keys()))
     for tab, (title, path) in zip(tabs, shap_files.items()):
@@ -882,327 +1371,769 @@ elif tab_choice == "Model Performance":
                 st.info(f"Run the pipeline to generate: {path.name}")
 
     if session_df is not None:
-        st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown('<div class="section-title">Dataset Summary</div>', unsafe_allow_html=True)
-        c1, c2, c3, c4 = st.columns(4)
-        stats = [
-            ("Total Matches",    session_df["match_id"].nunique(), "#1A1A1A"),
-            ("Total Sessions",   len(session_df),                   "#1A1A1A"),
-            ("Batting Momentum", int((session_df.get("momentum_label", pd.Series()) == 1).sum()),  C_BATTING),
-            ("Bowling Momentum", int((session_df.get("momentum_label", pd.Series()) == -1).sum()), C_BOWLING),
-        ]
-        for col, (label, val, color) in zip([c1, c2, c3, c4], stats):
-            with col:
-                st.markdown(f'<div class="metric-card"><div class="value" style="color:{color}">{val:,}</div><div class="label">{label}</div></div>',
-                            unsafe_allow_html=True)
-
-
-# ════════════════════════════════════════════════════════════════════════════
-# TAB 4 — LIVE MATCH  ← NEW
-# ════════════════════════════════════════════════════════════════════════════
-
-elif tab_choice == "Live Match":
-
-    st.markdown('<div class="section-title">Live Test Match Monitor</div>', unsafe_allow_html=True)
-
-    # ── Module gate: show fallback if src files not yet built ─────────
-    if not LIVE_MODULES_READY:
-        missing_mods = [n for n, m in [
-            ("live_feed", _live_feed), ("state_manager", _state_manager),
-            ("live_predictor", _live_predictor), ("session_segmenter", _session_seg),
-        ] if m is None]
-        st.markdown(f"""
-        <div class="info-box alert-red">
-            <b>Live modules not yet available.</b><br>
-            Missing files in <code>src/</code>: {', '.join(missing_mods)}.py<br>
-            Build these files, then re-run. The fallback simulator below works now.
-        </div>""", unsafe_allow_html=True)
-
-        # Fallback: simulate on any completed match from the dataset
-        st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown('<div class="subsection-title">Fallback — Simulate on Completed Match</div>',
-                    unsafe_allow_html=True)
         st.markdown("""
-        <div class="info-box">
-            Select any match from your dataset and click Simulate to run the full
-            prediction pipeline on its last recorded session. This validates your
-            model logic without requiring a live API.
+        <div class="section-head" style="margin-top:24px">
+            <span class="section-head-title">Dataset Distribution</span>
+            <span class="section-head-line"></span>
+        </div>""", unsafe_allow_html=True)
+        n_bat  = int((session_df.get("momentum_label", pd.Series()) == 1).sum())
+        n_bowl = int((session_df.get("momentum_label", pd.Series()) == -1).sum())
+        n_neu  = len(session_df) - n_bat - n_bowl
+        st.markdown(f"""
+        <div class="metric-grid">
+            <div class="metric-card">
+                <div class="metric-value">{session_df['match_id'].nunique():,}</div>
+                <div class="metric-label">Total Matches</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{len(session_df):,}</div>
+                <div class="metric-label">Total Sessions</div>
+            </div>
+            <div class="metric-card green">
+                <div class="metric-value green">{n_bat:,}</div>
+                <div class="metric-label">Batting Momentum Sessions</div>
+            </div>
+            <div class="metric-card red">
+                <div class="metric-value red">{n_bowl:,}</div>
+                <div class="metric-label">Bowling Momentum Sessions</div>
+            </div>
         </div>""", unsafe_allow_html=True)
 
-        if session_df is not None and "xgb" in models:
-            match_lookup = build_match_lookup(session_df)
-            match_ids    = sorted(session_df["match_id"].unique())
-            label_to_id  = {match_label(m, match_lookup): m for m in match_ids}
-            sim_label    = st.selectbox("Select match", list(label_to_id.keys()),
-                                        key="sim_match")
-            sim_id       = label_to_id[sim_label]
 
-            if st.button("▶ Simulate Last Session Prediction", type="primary"):
-                sim_sessions = session_df[session_df["match_id"] == sim_id]
-                if sim_sessions.empty:
-                    st.warning("No session data for this match.")
-                else:
-                    last = sim_sessions.iloc[-1]
-                    raw  = {f: last.get(f, 0) for f in SESSION_FEATURES}
-                    X    = pd.DataFrame([raw])[SESSION_FEATURES].fillna(0)
-                    proba = models["xgb"].predict_proba(X)[0]
-                    le    = models["le"]
-                    pred  = int(le.inverse_transform([np.argmax(proba)])[0])
-                    classes      = le.classes_
-                    prob_bowling = float(proba[list(classes).index(-1)]) if -1 in classes else 0.0
-                    prob_neutral = float(proba[list(classes).index(0)])  if  0 in classes else 0.0
-                    prob_batting = float(proba[list(classes).index(1)])  if  1 in classes else 0.0
+# ════════════════════════════════════════════════════════════════════════════
+# TAB 4 — LIVE MATCH
+# ════════════════════════════════════════════════════════════════════════════
 
-                    st.markdown("<hr>", unsafe_allow_html=True)
-                    r1, r2, r3 = st.columns(3)
-                    sess_label = str(last.get("session","—")).replace("_"," ").title()
-                    with r1:
-                        st.markdown(f'<div class="metric-card live"><div style="margin-bottom:0.5rem">{momentum_badge(pred)}</div><div class="label">Simulated Momentum</div></div>', unsafe_allow_html=True)
-                    with r2:
-                        st.markdown(f'<div class="metric-card"><div class="value">{max(proba)*100:.0f}%</div><div class="label">Model Confidence</div></div>', unsafe_allow_html=True)
-                    with r3:
-                        st.markdown(f'<div class="metric-card"><div class="value" style="font-size:1.1rem">{sess_label}</div><div class="label">Session Simulated</div></div>', unsafe_allow_html=True)
+elif tab_choice == "🔴  Live Match":
 
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    st.plotly_chart(plot_probability_bars(prob_bowling, prob_neutral, prob_batting),
-                                    use_container_width=True, config={"displayModeBar": False})
-        st.stop()
+    @st.cache_data(ttl=60, show_spinner=False)
+    def _fetch_live():
+        try: return _live_feed.get_live_test_matches() if _live_feed else []
+        except: return []
 
-    # ── FULL LIVE MODE ────────────────────────────────────────────────
+    @st.cache_data(ttl=300, show_spinner=False)
+    def _fetch_upcoming():
+        try: return _live_feed.get_upcoming_matches() if _live_feed else []
+        except: return []
 
-    col_match, col_status = st.columns([2, 3])
+    # API status
+    if _live_feed:
+        st.markdown('<div class="poll-banner active"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;display:inline-block"></span>&nbsp;CricAPI connected · api.cricapi.com</div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="poll-banner">⊘ &nbsp; live_feed.py not loaded — place file in project root and restart</div>', unsafe_allow_html=True)
 
-    with col_match:
-        st.markdown('<div class="subsection-title">Select Live Match</div>', unsafe_allow_html=True)
-        try:
-            live_matches = _live_feed.get_live_test_matches()
-        except Exception as e:
-            live_matches = []
-            st.warning(f"Could not fetch live matches: {e}")
+    # ── Live matches ──────────────────────────────────────────────
+    st.markdown("""
+    <div class="section-head">
+        <span class="section-head-title">Currently Live</span>
+        <span class="section-head-line"></span>
+    </div>""", unsafe_allow_html=True)
 
-        if not live_matches:
-            st.markdown("""
-            <div class="info-box">
-                No live Test matches detected right now. Enter a match ID manually
-                to run predictions on a recent or upcoming match.
+    live_matches = _fetch_live() if _live_feed else []
+    if live_matches:
+        for m in live_matches:
+            scores = m.get("score", [])
+            score_str = "  ·  ".join(
+                f"{s.get('inning','?')}: {s.get('r',0)}/{s.get('w',0)} ({s.get('o',0)} ov)"
+                for s in scores if isinstance(s, dict)
+            ) or m.get("status", "Live")
+            st.markdown(f"""
+            <div class="session-card" style="margin-bottom:10px">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                    <div>
+                        <div class="session-card-header">{m.get('series','Test')} · {m.get('venue','')}</div>
+                        <div style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--text);margin:6px 0;letter-spacing:-0.02em">
+                            {m.get('name', m.get('team1','?') + ' vs ' + m.get('team2','?'))}
+                        </div>
+                        <div class="session-footer">{score_str}</div>
+                    </div>
+                    <span class="mbadge bowl" style="white-space:nowrap">
+                        <span style="width:5px;height:5px;border-radius:50%;background:var(--red);animation:pulse 1.5s infinite;display:inline-block"></span>
+                        LIVE
+                    </span>
+                </div>
             </div>""", unsafe_allow_html=True)
-            manual_id = st.text_input("Cricsheet / API match ID",
-                                      placeholder="e.g. 1234567", key="manual_id")
-            if manual_id:
-                live_matches = [{"id": manual_id, "name": f"Manual — {manual_id}"}]
+    else:
+        st.markdown("""
+        <div class="info-card amber">
+            No Test matches live right now. Check <b>Upcoming</b> below or enter a match ID manually.
+        </div>""", unsafe_allow_html=True)
 
-        if not live_matches:
-            st.info("Enter a match ID above to continue.")
-            st.stop()
+    # ── Upcoming ──────────────────────────────────────────────────
+    st.markdown("""
+    <div class="section-head">
+        <span class="section-head-title">Upcoming Fixtures</span>
+        <span class="section-head-line"></span>
+    </div>""", unsafe_allow_html=True)
 
-        match_options = {m.get("name", m.get("id", "Unknown")): m.get("id")
-                         for m in live_matches}
-        chosen_name   = st.selectbox("Match", list(match_options.keys()),
-                                     label_visibility="collapsed", key="live_sel")
-        chosen_id     = match_options[chosen_name]
+    upcoming = _fetch_upcoming() if _live_feed else []
+    if upcoming:
+        cols = st.columns(2)
+        for i, m in enumerate(upcoming[:6]):
+            match_id  = m.get("id", "")
+            date_str  = m.get("date","")[:10] if m.get("date") else "TBC"
+            with cols[i % 2]:
+                st.markdown(f"""
+                <div class="session-card" style="margin-bottom:10px">
+                    <div class="session-card-header">{date_str} · {m.get('venue','')}</div>
+                    <div style="font-family:var(--font-display);font-size:1rem;font-weight:700;letter-spacing:-0.02em;margin:6px 0;color:var(--text)">
+                        {m.get('team1','?')} <span style="color:var(--muted)">vs</span> {m.get('team2','?')}
+                    </div>
+                    <div class="session-footer">{m.get('series','Test Match')}</div>
+                </div>""", unsafe_allow_html=True)
+                if st.button("Use this match →", key=f"use_{match_id}", use_container_width=True):
+                    st.session_state["manual_match_id"] = match_id
+                    st.rerun()
+    else:
+        st.markdown('<div class="info-card">No upcoming matches found. Refreshes every 5 minutes.</div>', unsafe_allow_html=True)
 
-        interval_map  = {"Every 2 min (active play)": 120,
-                         "Every 5 min (standard)"   : 300,
-                         "Every 10 min (slow play)"  : 600}
-        interval_label = st.selectbox("Poll interval", list(interval_map.keys()), index=1)
-        chosen_interval = interval_map[interval_label]
+    # ── Prediction setup ──────────────────────────────────────────
+    st.markdown("""
+    <div class="section-head">
+        <span class="section-head-title">Run a Prediction</span>
+        <span class="section-head-line"></span>
+    </div>""", unsafe_allow_html=True)
 
-    with col_status:
+    sel_col, ctrl_col = st.columns([2, 2])
+    with sel_col:
+        st.markdown('<div class="sub-label">Match</div>', unsafe_allow_html=True)
+        opts_live = {
+            m.get("name", f"{m.get('team1','?')} vs {m.get('team2','?')}"): m.get("id","")
+            for m in live_matches
+        }
+        dropdown = list(opts_live.keys()) + ["— Enter ID manually —"]
+        chosen_lbl = st.selectbox("", dropdown, label_visibility="collapsed", key="live_sel")
+        if chosen_lbl == "— Enter ID manually —":
+            manual_id = st.text_input("", placeholder="CricAPI match ID…", key="manual_match_id")
+            chosen_id = manual_id.strip() if manual_id else ""
+            if not chosen_id: st.caption("Enter a match ID to continue.")
+        else:
+            chosen_id = opts_live.get(chosen_lbl, "")
+
+    with ctrl_col:
+        st.markdown('<div class="sub-label">Mode</div>', unsafe_allow_html=True)
+        pred_mode = st.radio("",
+            ["🔴 Live API (real ball-by-ball)", "🗃️ Simulate on historical match"],
+            label_visibility="collapsed", key="pred_mode")
+        if "Live API" in pred_mode:
+            iv_map    = {"Every 2 min": 120, "Every 5 min": 300, "Every 10 min": 600}
+            iv_lbl    = st.selectbox("Poll interval", list(iv_map.keys()), index=1, key="iv_sel")
+            chosen_iv = iv_map[iv_lbl]
+        else:
+            chosen_iv = 300
+
+    # ── Live API controls ─────────────────────────────────────────
+    if "Live API" in pred_mode and chosen_id:
         polling_active = st.session_state.get(f"polling_active_{chosen_id}", False)
         last_update    = st.session_state.get("last_update", "Never")
         poll_count     = st.session_state.get("poll_count", 0)
         poll_error     = st.session_state.get("poll_error", None)
 
-        st.markdown('<div class="subsection-title">Polling Status</div>', unsafe_allow_html=True)
-
         if polling_active:
             st.markdown(f"""
-            <div class="polling-banner active">
-                <span class="live-dot"></span>
-                Polling active &nbsp;·&nbsp; {poll_count} prediction(s) made
-                &nbsp;·&nbsp; Last: {last_update}
+            <div class="poll-banner active">
+                <span style="width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;display:inline-block"></span>
+                Auto-polling active · {poll_count} prediction(s) · Last: {last_update}
             </div>""", unsafe_allow_html=True)
-        else:
-            st.markdown("""
-            <div class="polling-banner stopped">
-                Polling stopped &nbsp;·&nbsp; Click Start to begin live predictions
-            </div>""", unsafe_allow_html=True)
-
         if poll_error:
-            st.markdown(f'<div class="info-box alert-red"><b>Last error:</b> {poll_error}</div>',
-                        unsafe_allow_html=True)
+            st.markdown(f'<div class="info-card red"><b>API Error:</b> {poll_error}<br>Ball-by-ball data requires a paid CricAPI plan. Use Simulate mode on the free tier.</div>', unsafe_allow_html=True)
 
-        btn1, btn2 = st.columns(2)
-        with btn1:
+        b1, b2, b3 = st.columns(3)
+        with b1:
             if not polling_active:
-                if st.button("▶ Start Live Polling", type="primary", key="btn_start"):
-                    start_polling(chosen_id, interval=chosen_interval)
-                    st.session_state["poll_error"] = None
-                    st.rerun()
+                if st.button("▶ Start Auto-Poll", type="primary", key="btn_start", use_container_width=True):
+                    if _live_predictor and _state_manager:
+                        start_polling(chosen_id, interval=chosen_iv)
+                        st.rerun()
+                    else: st.error("live_predictor or state_manager not loaded.")
             else:
-                if st.button("⏹ Stop Polling", key="btn_stop"):
-                    stop_polling(chosen_id)
+                if st.button("⏹ Stop", key="btn_stop", use_container_width=True):
+                    stop_polling(chosen_id); st.rerun()
+        with b2:
+            if st.button("⚡ Predict Once", key="btn_now", use_container_width=True):
+                if not _live_predictor or not _state_manager:
+                    st.error("live_predictor.py or state_manager.py not found.")
+                elif not chosen_id:
+                    st.warning("Select or enter a match ID first.")
+                else:
+                    with st.spinner("Fetching live data…"):
+                        try:
+                            result = _live_predictor.predict_current_session(chosen_id)
+                            if "error" not in result:
+                                _state_manager.save_prediction(result)
+                                _state_manager.save_wp_point(chosen_id, result["prob_batting"], result["prob_bowling"], result["session_name"])
+                                st.session_state["last_result"]  = result
+                                st.session_state["last_update"]  = datetime.utcnow().strftime("%H:%M:%S UTC")
+                                st.session_state["poll_count"]   = poll_count + 1
+                                st.session_state["poll_error"]   = None
+                            else:
+                                st.session_state["poll_error"] = result["error"]
+                        except Exception as exc:
+                            st.session_state["poll_error"] = str(exc)
                     st.rerun()
-        with btn2:
-            if st.button("🔄 Predict Now", key="btn_now"):
-                with st.spinner("Fetching live data and running inference…"):
-                    try:
-                        result = _live_predictor.predict_current_session(chosen_id)
-                        if "error" not in result:
-                            _state_manager.save_prediction(result)
-                            _state_manager.save_wp_point(
-                                chosen_id,
-                                result["prob_batting"],
-                                result["prob_bowling"],
-                                result["session_name"],
-                            )
-                            st.session_state["last_result"] = result
-                            st.session_state["last_update"] = datetime.utcnow().strftime("%H:%M:%S UTC")
-                            st.session_state["poll_count"]  = st.session_state.get("poll_count", 0) + 1
-                            st.session_state["poll_error"]  = None
-                        else:
-                            st.session_state["poll_error"] = result["error"]
-                    except Exception as e:
-                        st.session_state["poll_error"] = str(e)
-                st.rerun()
+        with b3:
+            if st.button("🔃 Refresh", key="btn_refresh", use_container_width=True):
+                st.cache_data.clear(); st.rerun()
 
-    st.markdown("<hr>", unsafe_allow_html=True)
+    # ── Simulate mode ─────────────────────────────────────────────
+    if "Simulate" in pred_mode:
+        if session_df is None:
+            st.warning("No session data. Run `python main.py` first.")
+        elif "xgb" not in models:
+            st.warning("XGBoost model not found. Run pipeline first.")
+        else:
+            st.markdown('<div class="sub-label">Historical Match Simulation</div>', unsafe_allow_html=True)
+            ml_sim   = build_match_lookup(session_df)
+            all_ids  = sorted(session_df["match_id"].unique())
+            sim_q    = st.text_input("", placeholder="Search team or match ID…", key="sim_s")
+            filt_sim = [m for m in all_ids if sim_q.lower() in match_label(m, ml_sim).lower()] if sim_q else all_ids
+            st.caption(f"{len(filt_sim)} match(es)")
+            l2id = {match_label(m, ml_sim): m for m in filt_sim}
+            if l2id:
+                sim_chosen = st.selectbox("", list(l2id.keys()), label_visibility="collapsed", key="sim_m")
+                sim_id     = l2id[sim_chosen]
+                sim_all    = session_df[session_df["match_id"] == sim_id]
+                if not sim_all.empty and "session" in sim_all.columns:
+                    sess_lbls    = sim_all["session"].astype(str).tolist()
+                    chosen_s_lbl = st.selectbox("Session", sess_lbls, index=len(sess_lbls)-1, key="sim_sess")
+                    chosen_row   = sim_all[sim_all["session"].astype(str) == chosen_s_lbl].iloc[0]
+                else:
+                    chosen_row = sim_all.iloc[-1] if not sim_all.empty else None
 
-    # ── Latest prediction display ─────────────────────────────────────
-    result = st.session_state.get("last_result")
+                if st.button("▶ Run Simulation", type="primary", key="btn_sim", use_container_width=True):
+                    if chosen_row is None:
+                        st.warning("No data for this match.")
+                    else:
+                        raw   = {f: chosen_row.get(f, 0) for f in SESSION_FEATURES}
+                        X     = pd.DataFrame([raw])[SESSION_FEATURES].fillna(0)
+                        proba = models["xgb"].predict_proba(X)[0]
+                        le    = models["le"]
+                        pred  = int(le.inverse_transform([np.argmax(proba)])[0])
+                        cls   = list(le.classes_)
+                        p_b   = float(proba[cls.index(-1)]) if -1 in cls else 0.0
+                        p_n   = float(proba[cls.index(0)])  if  0 in cls else 0.0
+                        p_bat = float(proba[cls.index(1)])  if  1 in cls else 0.0
+                        st.session_state["sim_result"] = {
+                            "pred":pred,"proba":proba,"p_bat":p_bat,"p_neut":p_n,"p_bowl":p_b,
+                            "lbl":chosen_s_lbl,"row":chosen_row,
+                        }
 
-    if result and "error" not in result:
-        st.markdown('<div class="section-title">Current Session Prediction</div>',
-                    unsafe_allow_html=True)
-        pred_lbl  = result["predicted_label"]
-        feat      = result.get("features", {})
-        mom_idx   = feat.get("session_momentum_index", 0)
-        idx_color = C_BATTING if mom_idx > 0 else C_BOWLING
-        css_cls   = "live" if pred_lbl == 1 else ("bowling" if pred_lbl == -1 else "")
+                sim = st.session_state.get("sim_result")
+                if sim:
+                    row = sim["row"]
+                    mom = float(row.get("session_momentum_index", 0))
+                    wp  = float(row.get("win_probability", 0.5))
+                    mc  = "green" if mom > 0 else "red"
+                    wc  = "green" if wp  > 0.5 else "red"
+                    st.markdown(f"""
+                    <div class="metric-grid" style="margin-top:20px">
+                        <div class="metric-card {'green' if sim['pred']==1 else 'red' if sim['pred']==-1 else ''}">
+                            <div style="margin-bottom:8px">{momentum_badge_html(sim['pred'])}</div>
+                            <div class="metric-label">Predicted Momentum</div>
+                        </div>
+                        <div class="metric-card blue">
+                            <div class="metric-value blue">{max(sim['proba'])*100:.0f}%</div>
+                            <div class="metric-label">Confidence</div>
+                        </div>
+                        <div class="metric-card {mc}">
+                            <div class="metric-value {mc}">{mom:+.2f}</div>
+                            <div class="metric-label">Momentum Index</div>
+                        </div>
+                        <div class="metric-card {wc}">
+                            <div class="metric-value {wc}">{wp:.0%}</div>
+                            <div class="metric-label">Win Probability</div>
+                        </div>
+                    </div>""", unsafe_allow_html=True)
 
-        c1, c2, c3, c4 = st.columns(4)
-        with c1:
-            st.markdown(f'<div class="metric-card {css_cls}"><div style="margin-bottom:0.5rem">{momentum_badge(pred_lbl)}</div><div class="label">Predicted Momentum</div></div>', unsafe_allow_html=True)
-        with c2:
-            st.markdown(f'<div class="metric-card"><div class="value">{result["confidence"]*100:.0f}%</div><div class="label">Model Confidence</div></div>', unsafe_allow_html=True)
-        with c3:
-            st.markdown(f'<div class="metric-card"><div class="value" style="color:{idx_color}">{mom_idx:+.2f}</div><div class="label">Momentum Index</div></div>', unsafe_allow_html=True)
-        with c4:
-            st.markdown(f'<div class="metric-card"><div class="value" style="font-size:1.1rem">Inn {result["innings_num"]} · {result["session_name"].title()}</div><div class="label">{result["balls_in_session"]} balls</div></div>', unsafe_allow_html=True)
+                    lc, rc = st.columns(2)
+                    with lc:
+                        st.markdown('<div class="sub-label">Class Probabilities</div>', unsafe_allow_html=True)
+                        st.plotly_chart(plot_probability_bars(sim["p_bowl"],sim["p_neut"],sim["p_bat"]),
+                                        use_container_width=True, config={"displayModeBar":False})
+                    with rc:
+                        st.markdown('<div class="sub-label">Key Session Stats</div>', unsafe_allow_html=True)
+                        snap = {
+                            "Session"      : str(sim["lbl"]).replace("_"," ").title(),
+                            "Innings"      : int(row.get("innings_num",1)),
+                            "Run Rate"     : f"{float(row.get('session_run_rate',0)):.2f}",
+                            "Runs"         : int(row.get("session_runs",0)),
+                            "Wickets"      : int(row.get("session_wickets",0)),
+                            "Dot Ball %"   : f"{float(row.get('dot_ball_pct',0))*100:.1f}%",
+                            "Max Dot Streak": int(row.get("max_dot_streak",0)),
+                            "Boundary Rate": f"{float(row.get('boundary_rate',0))*100:.1f}%",
+                        }
+                        st.dataframe(pd.DataFrame(snap.items(), columns=["Stat","Value"]),
+                                     use_container_width=True, hide_index=True)
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        feat_col, prob_col = st.columns(2)
-        with feat_col:
-            st.markdown('<div class="subsection-title">Live Feature Snapshot</div>', unsafe_allow_html=True)
-            if feat:
-                display_feats = {
-                    "session_run_rate"  : f"{feat.get('session_run_rate',0):.2f}",
-                    "session_runs"      : feat.get("session_runs", 0),
-                    "session_wickets"   : feat.get("session_wickets", 0),
-                    "dot_ball_pct"      : f"{feat.get('dot_ball_pct',0):.2f}",
-                    "max_dot_streak"    : feat.get("max_dot_streak", 0),
-                    "run_rate_delta"    : f"{feat.get('run_rate_delta',0):+.2f}",
-                    "wickets_delta"     : f"{feat.get('wickets_delta',0):+.2f}",
-                    "top_order_exposed" : "Yes" if feat.get("top_order_exposed") else "No",
-                    "ball_age_start"    : feat.get("ball_age_start", 0),
-                    "innings_num"       : feat.get("innings_num", 1),
-                }
-                st.dataframe(pd.DataFrame(list(display_feats.items()),
-                                          columns=["Feature", "Value"]),
-                             use_container_width=True, hide_index=True)
-        with prob_col:
-            st.markdown('<div class="subsection-title">Class Probability Breakdown</div>', unsafe_allow_html=True)
-            st.plotly_chart(
-                plot_probability_bars(result["prob_bowling"], result["prob_neutral"], result["prob_batting"]),
-                use_container_width=True, config={"displayModeBar": False},
-            )
+                    interp = {
+                        1 : f"Batting side holds momentum — run rate delta of {float(row.get('run_rate_delta',0)):+.2f} indicates accelerating scoring.",
+                        -1: f"Bowling side holds momentum — {'dot ball pressure (streak: '+str(int(row.get('max_dot_streak',0)))+')' if row.get('max_dot_streak',0)>5 else 'wicket-taking'} is dominating.",
+                        0 : "Session evenly contested — no decisive advantage established.",
+                    }
+                    bc = "green" if sim["pred"]==1 else ("red" if sim["pred"]==-1 else "")
+                    st.markdown(f'<div class="info-card {bc}"><b>Interpretation:</b> {interp.get(sim["pred"],"")}</div>',
+                                unsafe_allow_html=True)
 
-    elif result and "error" in result:
-        st.markdown(f'<div class="info-box alert-red"><b>Prediction error:</b> {result["error"]}</div>',
-                    unsafe_allow_html=True)
-    else:
+    # ── Live result display ───────────────────────────────────────
+    live_result = st.session_state.get("last_result")
+    if live_result and "error" not in live_result and "Live API" in pred_mode:
         st.markdown("""
-        <div class="info-box">
-            No prediction yet. Click <b>Predict Now</b> or start live polling above.
+        <div class="section-head" style="margin-top:28px">
+            <span class="section-head-title">Latest Live Prediction</span>
+            <span class="section-head-line"></span>
         </div>""", unsafe_allow_html=True)
 
-    st.markdown("<hr>", unsafe_allow_html=True)
+        pl    = live_result["predicted_label"]
+        feat  = live_result.get("features", {})
+        mi    = feat.get("session_momentum_index", 0)
+        mic   = "green" if mi > 0 else "red"
 
-    # ── WP Trajectory chart ───────────────────────────────────────────
-    st.markdown('<div class="section-title">Win Probability Trajectory</div>',
-                unsafe_allow_html=True)
-    chart_c, note_c = st.columns([3, 1])
-    with chart_c:
+        st.markdown(f"""
+        <div class="metric-grid">
+            <div class="metric-card {'green' if pl==1 else 'red' if pl==-1 else ''}">
+                <div style="margin-bottom:8px">{momentum_badge_html(pl)}</div>
+                <div class="metric-label">Momentum</div>
+            </div>
+            <div class="metric-card blue">
+                <div class="metric-value blue">{live_result['confidence']*100:.0f}%</div>
+                <div class="metric-label">Confidence</div>
+            </div>
+            <div class="metric-card {mic}">
+                <div class="metric-value {mic}">{mi:+.2f}</div>
+                <div class="metric-label">Momentum Index</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" style="font-size:1rem">Inn {live_result['innings_num']}</div>
+                <div class="metric-label">{live_result['session_name'].title()} · {live_result['balls_in_session']} balls</div>
+            </div>
+        </div>""", unsafe_allow_html=True)
+
+        fc, pc = st.columns(2)
+        with fc:
+            st.markdown('<div class="sub-label">Class Probabilities</div>', unsafe_allow_html=True)
+            st.plotly_chart(plot_probability_bars(live_result["prob_bowling"],live_result["prob_neutral"],live_result["prob_batting"]),
+                            use_container_width=True, config={"displayModeBar":False})
+        with pc:
+            st.markdown('<div class="sub-label">Win Probability Trajectory</div>', unsafe_allow_html=True)
+            try:
+                wp_hist = _state_manager.get_wp_history(chosen_id) if _state_manager and chosen_id else []
+            except: wp_hist = []
+            if wp_hist:
+                wf = plot_live_wp(wp_hist)
+                if wf: st.plotly_chart(wf, use_container_width=True, config={"displayModeBar":False})
+            else:
+                st.caption("Make 2+ predictions to see WP trajectory.")
+
         try:
-            wp_hist = _state_manager.get_wp_history(chosen_id)
-        except Exception:
-            wp_hist = []
-        if wp_hist:
-            wp_fig = plot_live_wp_trajectory(wp_hist)
-            if wp_fig:
-                st.plotly_chart(wp_fig, use_container_width=True,
-                                config={"displayModeBar": False})
-        else:
-            st.markdown("""
-            <div class="info-box">
-                No WP history yet. Make at least two predictions to see the trajectory.
-            </div>""", unsafe_allow_html=True)
-    with note_c:
-        st.markdown("""
-        <div class="notes-heading">Live Monitoring</div>
-        <div class="note-block">Each point represents one polling cycle. Dashed vertical
-        lines mark detected session boundaries.</div>
-        <div class="note-block">Crossings of the 50% reference line represent momentum
-        reversals — a key metric in Chapter 5 of the thesis.</div>
-        """, unsafe_allow_html=True)
+            audit = _state_manager.get_prediction_log(chosen_id) if _state_manager and chosen_id else []
+        except: audit = []
+        if audit:
+            st.markdown('<div class="sub-label" style="margin-top:16px">Prediction Log</div>', unsafe_allow_html=True)
+            ldf = pd.DataFrame(audit)
+            if "label" in ldf.columns:
+                ldf["label"] = ldf["label"].apply(lambda x: "▲ Batting" if x==1 else ("▼ Bowling" if x==-1 else "→ Neutral"))
+            if "confidence" in ldf.columns:
+                ldf["confidence"] = ldf["confidence"].apply(lambda x: f"{x:.1%}")
+            ldf.columns = [c.replace("_"," ").title() for c in ldf.columns]
+            st.dataframe(ldf, use_container_width=True, hide_index=True)
 
-    st.markdown("<hr>", unsafe_allow_html=True)
+    _polling_now = chosen_id and st.session_state.get(f"polling_active_{chosen_id}", False) if 'chosen_id' in dir() else False
+    if _polling_now:
+        time.sleep(min(chosen_iv, 60))
+        st.rerun()
 
-    # ── Prediction Audit Log ──────────────────────────────────────────
-    st.markdown('<div class="section-title">Prediction Audit Log</div>',
-                unsafe_allow_html=True)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# TAB 5 — PRE-MATCH FORECAST
+# ════════════════════════════════════════════════════════════════════════════
+
+elif tab_choice == "🔭  Pre-Match Forecast":
+
+    if session_df is None:
+        st.error("Session data not found. Run `python main.py` first to build profiles.")
+        st.stop()
+
+    if not PREMATCH_READY:
+        st.error(
+            "prematch_predictor.py not found. "
+            "Place it in the same folder as Dashboard.py and restart."
+        )
+        st.stop()
+
+    if "xgb" not in models:
+        st.warning("XGBoost model not found. Run `python main.py` first.")
+        st.stop()
+
+    # ── Inline import of prematch classes ──────────────────────────────────
+    from prematch_predictor import (
+        TeamProfiler, PreMatchFeatureBuilder, PreMatchPredictor
+    )
+
+    # ── Label maps ─────────────────────────────────────────────────────────
+    PM_LABEL_MAP   = {1: "Batting Momentum", 0: "Neutral", -1: "Bowling Momentum"}
+    PM_LABEL_COLOR = {1: C_PRIMARY, 0: C_AMBER, -1: C_RED}
+    PM_LABEL_ICON  = {1: "▲", 0: "→", -1: "▼"}
+
     st.markdown("""
-    <div class="info-box">
-        Every prediction for this match is persisted to SQLite via
-        <code>state_manager.py</code>. This log forms the basis of out-of-sample
-        evaluation reported in the thesis results chapter.
+    <div class="info-card blue">
+        <b>Pre-Match Forecast</b> — Generates a session-level momentum prediction
+        for any upcoming Test match before it begins. Uses each team's historical
+        batting and bowling profiles from your Cricsheet dataset combined with
+        match context (home ground, toss, innings structure).
     </div>""", unsafe_allow_html=True)
 
-    try:
-        log = _state_manager.get_prediction_log(chosen_id)
-    except Exception:
-        log = []
+    # ── Discover available teams ────────────────────────────────────────────
+    _profiler  = TeamProfiler(session_df)
+    _all_teams = _profiler.available_teams()
 
-    if log:
-        log_df = pd.DataFrame(log)
-        if "label" in log_df.columns:
-            log_df["label"] = log_df["label"].apply(
-                lambda x: "⬆ Batting" if x == 1 else ("⬇ Bowling" if x == -1 else "→ Neutral")
-            )
-        if "confidence" in log_df.columns:
-            log_df["confidence"] = log_df["confidence"].apply(lambda x: f"{x:.1%}")
-        log_df.columns = [c.replace("_", " ").title() for c in log_df.columns]
-        st.dataframe(log_df, use_container_width=True, hide_index=True)
+    if not _all_teams:
+        st.error("No teams found in session data.")
+        st.stop()
 
-        if len(log) >= 2:
-            batting_n = sum(1 for r in log if r["label"] == 1)
-            bowling_n = sum(1 for r in log if r["label"] == -1)
-            neutral_n = sum(1 for r in log if r["label"] == 0)
-            s1, s2, s3 = st.columns(3)
-            with s1:
-                st.markdown(f'<div class="metric-card live"><div class="value" style="font-size:1.6rem;color:{C_BATTING}">{batting_n}</div><div class="label">Batting Momentum Sessions</div></div>', unsafe_allow_html=True)
-            with s2:
-                st.markdown(f'<div class="metric-card bowling"><div class="value" style="font-size:1.6rem;color:{C_BOWLING}">{bowling_n}</div><div class="label">Bowling Momentum Sessions</div></div>', unsafe_allow_html=True)
-            with s3:
-                st.markdown(f'<div class="metric-card"><div class="value" style="font-size:1.6rem;color:{C_NEUTRAL}">{neutral_n}</div><div class="label">Neutral Sessions</div></div>', unsafe_allow_html=True)
+    # ── Match Setup Form ────────────────────────────────────────────────────
+    st.markdown("""
+    <div class="section-head">
+        <span class="section-head-title">Match Setup</span>
+        <span class="section-head-line"></span>
+    </div>""", unsafe_allow_html=True)
+
+    pm_c1, pm_c2, pm_c3 = st.columns(3)
+    with pm_c1:
+        pm_team1 = st.selectbox("Team 1", _all_teams, key="pm_team1",
+                                help="Team batting first if they win toss and choose to bat")
+    with pm_c2:
+        _others  = [t for t in _all_teams if t != pm_team1]
+        pm_team2 = st.selectbox("Team 2", _others if _others else _all_teams, key="pm_team2")
+    with pm_c3:
+        pm_venue = st.text_input("Venue", placeholder="e.g. Lords, MCG, Eden Gardens…", key="pm_venue")
+
+    pm_r2c1, pm_r2c2, pm_r2c3 = st.columns(3)
+    with pm_r2c1:
+        pm_home     = st.selectbox("Home Team", [pm_team1, pm_team2, "Neutral"], key="pm_home")
+    with pm_r2c2:
+        pm_toss     = st.selectbox("Toss Winner", [pm_team1, pm_team2], key="pm_toss")
+    with pm_r2c3:
+        pm_decision = st.selectbox("Toss Decision", ["bat", "field"], key="pm_decision")
+
+    # Optional CricAPI auto-fill
+    with st.expander("📡  Auto-fill from CricAPI match ID (optional)"):
+        _api_id = st.text_input("", placeholder="Paste CricAPI match ID here…", key="pm_api_id")
+        if st.button("Fetch from API", key="pm_fetch"):
+            try:
+                from live_feed import get_match_info as _gmi
+                _info  = _gmi(_api_id)
+                _teams = _info.get("teams", [])
+                _toss  = _info.get("toss", {})
+                st.success(
+                    f"✅  Fetched: {' vs '.join(_teams)} at {_info.get('venue','?')} · "
+                    f"Toss: {_toss.get('winner','?')} chose to {_toss.get('decision','?')}"
+                )
+            except Exception as _e:
+                st.error(f"API error: {_e}")
+
+    # ── Run forecast ────────────────────────────────────────────────────────
+    _pm_run_col, _ = st.columns([1, 3])
+    with _pm_run_col:
+        _pm_run = st.button("🔭  Generate Forecast", type="primary",
+                            use_container_width=True, key="pm_run")
+
+    if _pm_run:
+        _home_val = pm_home if pm_home != "Neutral" else pm_team1
+        with st.spinner("Analysing historical profiles and building forecast…"):
+            try:
+                _predictor = PreMatchPredictor()
+                _pm_result = _predictor.predict(
+                    team1         = pm_team1,
+                    team2         = pm_team2,
+                    venue         = pm_venue or "Unknown",
+                    home_team     = _home_val,
+                    toss_winner   = pm_toss,
+                    toss_decision = pm_decision,
+                )
+                st.session_state["pm_result"] = _pm_result
+            except Exception as _e:
+                st.error(f"Forecast failed: {_e}")
+                st.stop()
+
+    _pm_result = st.session_state.get("pm_result")
+    if not _pm_result:
+        st.stop()
+
+    # ── Results ─────────────────────────────────────────────────────────────
+    _ms  = _pm_result["match_summary"]
+    _sf  = _pm_result["session_forecasts"]
+    _h2h = _pm_result["h2h"]
+    _pw  = _ms["projected_winner"]
+    _wc  = _ms["winner_confidence"]
+    _pw_color = "green" if _pw not in ("Contested", "") else "amber"
+
+    st.markdown("""
+    <div class="section-head" style="margin-top:28px">
+        <span class="section-head-title">Forecast Results</span>
+        <span class="section-head-line"></span>
+    </div>""", unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="metric-grid">
+        <div class="metric-card {_pw_color}">
+            <div class="metric-value" style="font-size:1.15rem;color:var(--{'green' if _pw_color=='green' else 'amber'})">{_pw}</div>
+            <div class="metric-label">Projected Winner</div>
+            <div class="metric-delta">{_wc:.0%} confidence</div>
+        </div>
+        <div class="metric-card green">
+            <div class="metric-value green">{_ms['batting_momentum_sessions']}</div>
+            <div class="metric-label">Batting-dominant Sessions</div>
+            <div class="metric-delta">of 6 total</div>
+        </div>
+        <div class="metric-card red">
+            <div class="metric-value red">{_ms['bowling_momentum_sessions']}</div>
+            <div class="metric-label">Bowling-dominant Sessions</div>
+            <div class="metric-delta">of 6 total</div>
+        </div>
+        <div class="metric-card amber">
+            <div class="metric-value amber">{_ms['neutral_sessions']}</div>
+            <div class="metric-label">Contested Sessions</div>
+            <div class="metric-delta">of 6 total</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
+
+    # ── Session breakdown table ─────────────────────────────────────────────
+    st.markdown("""
+    <div class="section-head">
+        <span class="section-head-title">Session-by-Session Breakdown</span>
+        <span class="section-head-line"></span>
+    </div>""", unsafe_allow_html=True)
+
+    _table_rows = ""
+    for _s in _sf:
+        _lbl   = PM_LABEL_MAP[_s["predicted_label"]]
+        _icon  = PM_LABEL_ICON[_s["predicted_label"]]
+        _color = {1: "var(--green)", 0: "var(--amber)", -1: "var(--red)"}[_s["predicted_label"]]
+        _table_rows += f"""
+        <tr>
+            <td>Inn {_s['innings']}</td>
+            <td>{_s['session']}</td>
+            <td style="color:var(--text)">{_s['batting_team']}</td>
+            <td style="color:{_color};font-weight:600">{_icon} {_lbl}</td>
+            <td>{_s['exp_run_rate']:.2f}</td>
+            <td>{_s['exp_wickets']:.1f}</td>
+            <td style="color:var(--green)">{_s['prob_batting']*100:.0f}%</td>
+            <td style="color:var(--muted2)">{_s['prob_neutral']*100:.0f}%</td>
+            <td style="color:var(--red)">{_s['prob_bowling']*100:.0f}%</td>
+            <td style="color:var(--muted2)">{_s['confidence']*100:.0f}%</td>
+        </tr>"""
+
+    st.markdown(f"""
+    <div style="background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px">
+    <table class="ctable">
+        <thead><tr>
+            <th>Inn</th><th>Session</th><th>Batting Team</th><th>Forecast</th>
+            <th>Exp RR</th><th>Exp Wkts</th>
+            <th>P(Bat)</th><th>P(Neut)</th><th>P(Bowl)</th><th>Conf</th>
+        </tr></thead>
+        <tbody>{_table_rows}</tbody>
+    </table>
+    </div>""", unsafe_allow_html=True)
+
+    # ── Charts ──────────────────────────────────────────────────────────────
+    st.markdown("""
+    <div class="section-head">
+        <span class="section-head-title">Visual Analysis</span>
+        <span class="section-head-line"></span>
+    </div>""", unsafe_allow_html=True)
+
+    _pm_cl, _pm_cr = st.columns(2)
+
+    with _pm_cl:
+        st.markdown('<div class="sub-label">Momentum Probability Stack — All Sessions</div>',
+                    unsafe_allow_html=True)
+        _pm_labels  = [f"Inn{_s['innings']} {_s['session']}" for _s in _sf]
+        _pm_bat_p   = [_s["prob_batting"]  for _s in _sf]
+        _pm_neu_p   = [_s["prob_neutral"]  for _s in _sf]
+        _pm_bowl_p  = [_s["prob_bowling"]  for _s in _sf]
+        _stack_fig  = go.Figure()
+        _stack_fig.add_trace(go.Bar(name="Batting", x=_pm_bat_p,  y=_pm_labels, orientation="h",
+                                    marker_color=C_PRIMARY, marker_line_width=0))
+        _stack_fig.add_trace(go.Bar(name="Neutral", x=_pm_neu_p,  y=_pm_labels, orientation="h",
+                                    marker_color=C_AMBER,   marker_line_width=0))
+        _stack_fig.add_trace(go.Bar(name="Bowling", x=_pm_bowl_p, y=_pm_labels, orientation="h",
+                                    marker_color=C_RED,     marker_line_width=0))
+        _stack_fig.update_layout(
+            barmode="stack",
+            paper_bgcolor=C_SURFACE, plot_bgcolor=C_SURFACE,
+            font=dict(family="JetBrains Mono, monospace", size=10, color=C_MUTED),
+            height=300, margin=dict(l=8, r=8, t=12, b=8),
+            xaxis=dict(showgrid=False, tickformat=".0%", range=[0,1],
+                       tickfont=dict(size=9, color=C_MUTED), linecolor=C_BORDER, zeroline=False),
+            yaxis=dict(showgrid=False, linecolor=C_BORDER,
+                       tickfont=dict(size=9, color=C_MUTED2)),
+            showlegend=True,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02,
+                        font=dict(size=9), bgcolor="rgba(0,0,0,0)"),
+        )
+        st.plotly_chart(_stack_fig, use_container_width=True, config={"displayModeBar": False})
+
+    with _pm_cr:
+        st.markdown('<div class="sub-label">Expected Run Rate by Session</div>',
+                    unsafe_allow_html=True)
+        _rr_colors = [PM_LABEL_COLOR[_s["predicted_label"]] for _s in _sf]
+        _rr_fig    = go.Figure(go.Bar(
+            x=_pm_labels,
+            y=[_s["exp_run_rate"] for _s in _sf],
+            marker_color=_rr_colors, marker_line_width=0, marker_cornerradius=4,
+            text=[f"{_s['exp_run_rate']:.2f}" for _s in _sf], textposition="outside",
+            textfont=dict(size=10, family="JetBrains Mono", color=C_TEXT),
+        ))
+        _rr_fig.add_hline(y=3.0, line_dash="dash", line_color=C_BORDER, line_width=1,
+                          annotation_text="Test avg ~3.0", annotation_font_size=9,
+                          annotation_font_color=C_MUTED)
+        _rr_layout = chart_layout(height=280)
+        _rr_layout["yaxis"].update(range=[0, max(s["exp_run_rate"] for s in _sf) * 1.3])
+        _rr_fig.update_layout(**_rr_layout)
+        st.plotly_chart(_rr_fig, use_container_width=True, config={"displayModeBar": False})
+
+    # ── Team profile radar ──────────────────────────────────────────────────
+    st.markdown("""
+    <div class="section-head">
+        <span class="section-head-title">Team Batting Profiles</span>
+        <span class="section-head-line"></span>
+    </div>""", unsafe_allow_html=True)
+
+    _tp      = _pm_result["team_profiles"]
+    _t1_prof = _tp.get(pm_team1, {}).get("batting", {})
+    _t2_prof = _tp.get(pm_team2, {}).get("batting", {})
+
+    def _norm(v, lo, hi): return max(0.0, min(1.0, (v - lo) / max(hi - lo, 1e-6)))
+
+    def _to_radar(p):
+        return [
+            _norm(p.get("session_run_rate", 3.0),  2.0, 5.0),
+            _norm(p.get("boundary_rate",    0.06),  0.03, 0.15),
+            _norm(p.get("wickets_per_over", 0.25),  0.1, 0.6),
+            1 - _norm(p.get("dot_ball_pct", 0.45),  0.3, 0.65),
+            _norm(p.get("total_pressure_balls", 8), 3,   20),
+        ]
+
+    _radar_cats = ["Run Rate", "Boundary Rate", "Wicket Rate", "Batting Freedom", "Pressure"]
+    _rv1 = _to_radar(_t1_prof)
+    _rv2 = _to_radar(_t2_prof)
+
+    _radar_fig = go.Figure()
+    for _rv, _rname, _rcolor in [(_rv1, pm_team1, C_PRIMARY), (_rv2, pm_team2, C_RED)]:
+        _radar_fig.add_trace(go.Scatterpolar(
+            r     = _rv + [_rv[0]],
+            theta = _radar_cats + [_radar_cats[0]],
+            fill  = "toself",
+            name  = _rname,
+            line  = dict(color=_rcolor, width=2),
+            fillcolor = _rcolor + "1A",
+        ))
+    _radar_fig.update_layout(
+        polar=dict(
+            bgcolor=C_SURFACE,
+            radialaxis=dict(showticklabels=False, gridcolor=C_BORDER, range=[0,1]),
+            angularaxis=dict(gridcolor=C_BORDER, linecolor=C_BORDER,
+                             tickfont=dict(color=C_MUTED2, size=10)),
+        ),
+        paper_bgcolor=C_SURFACE, plot_bgcolor=C_SURFACE,
+        font=dict(color=C_TEXT, size=10, family="JetBrains Mono, monospace"),
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=-0.2,
+                    font=dict(size=9, color=C_MUTED2), bgcolor="rgba(0,0,0,0)"),
+        height=340, margin=dict(l=30, r=30, t=20, b=50),
+    )
+
+    _radar_col, _stats_col = st.columns([2, 1])
+    with _radar_col:
+        st.plotly_chart(_radar_fig, use_container_width=True, config={"displayModeBar": False})
+    with _stats_col:
+        def _fmt(p, k, mult=1, dp=2): return f"{p.get(k,0)*mult:.{dp}f}"
+        st.markdown(f"""
+        <div style="background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-top:8px">
+        <table class="ctable">
+            <thead><tr>
+                <th>Stat</th>
+                <th style="color:var(--green)">{pm_team1[:14]}</th>
+                <th style="color:var(--red)">{pm_team2[:14]}</th>
+            </tr></thead>
+            <tbody>
+                <tr><td>Run Rate</td>
+                    <td>{_fmt(_t1_prof,"session_run_rate")}</td>
+                    <td>{_fmt(_t2_prof,"session_run_rate")}</td></tr>
+                <tr><td>Dot Ball %</td>
+                    <td>{_fmt(_t1_prof,"dot_ball_pct",100,1)}%</td>
+                    <td>{_fmt(_t2_prof,"dot_ball_pct",100,1)}%</td></tr>
+                <tr><td>Boundary %</td>
+                    <td>{_fmt(_t1_prof,"boundary_rate",100,1)}%</td>
+                    <td>{_fmt(_t2_prof,"boundary_rate",100,1)}%</td></tr>
+                <tr><td>Wkts/Session</td>
+                    <td>{_fmt(_t1_prof,"session_wickets")}</td>
+                    <td>{_fmt(_t2_prof,"session_wickets")}</td></tr>
+                <tr><td>Sessions (n)</td>
+                    <td>{int(_t1_prof.get("n_sessions",0))}</td>
+                    <td>{int(_t2_prof.get("n_sessions",0))}</td></tr>
+            </tbody>
+        </table>
+        </div>""", unsafe_allow_html=True)
+
+    # ── H2H section ─────────────────────────────────────────────────────────
+    _n_h2h = _h2h.get("n_matches", 0)
+    st.markdown("""
+    <div class="section-head">
+        <span class="section-head-title">Head-to-Head History</span>
+        <span class="section-head-line"></span>
+    </div>""", unsafe_allow_html=True)
+
+    if _n_h2h > 0:
+        _h2h_c1, _h2h_c2 = st.columns(2)
+        for _hcol, _hteam, _hrole in [(_h2h_c1, pm_team1, "team1_batting"),
+                                       (_h2h_c2, pm_team2, "team2_batting")]:
+            _hp = _h2h.get(_hrole, {})
+            _hn = int(_hp.get("n_sessions", 0))
+            _hrr   = _hp.get("session_run_rate", 0)
+            _hwkts = _hp.get("session_wickets",  0)
+            _hdot  = _hp.get("dot_ball_pct", 0) * 100
+            with _hcol:
+                st.markdown(f"""
+                <div class="session-card">
+                    <div class="session-card-header">{_hteam} · Batting in H2H ({_n_h2h} matches)</div>
+                    <div class="session-value {'pos' if _hrr > 3.0 else 'neg'}">{_hrr:.2f}</div>
+                    <div class="session-footer">
+                        RR &nbsp;/&nbsp; {_hwkts:.1f} wkts/sess &nbsp;/&nbsp;
+                        {_hdot:.1f}% dots &nbsp; (n={_hn} sessions)
+                    </div>
+                </div>""", unsafe_allow_html=True)
     else:
-        st.info("No predictions logged yet for this match.")
+        st.markdown(f"""
+        <div class="info-card amber">
+            No head-to-head sessions found between <b>{pm_team1}</b> and
+            <b>{pm_team2}</b> in your dataset. Predictions use overall historical profiles.
+        </div>""", unsafe_allow_html=True)
 
-    # ── Auto-refresh when polling is active ───────────────────────────
-    # Refreshes the UI at most every 60 seconds while polling is running.
-    if polling_active:
-        time.sleep(min(chosen_interval, 60))
-        st.rerun()
+    # ── Export ───────────────────────────────────────────────────────────────
+    _exp_col, _ = st.columns([1, 3])
+    with _exp_col:
+        _csv_rows = [{
+            "innings": _s["innings"], "session": _s["session"],
+            "batting_team": _s["batting_team"],
+            "predicted_label": _s["predicted_label"],
+            "momentum": PM_LABEL_MAP[_s["predicted_label"]],
+            "confidence": round(_s["confidence"], 4),
+            "prob_batting": round(_s["prob_batting"], 4),
+            "prob_neutral": round(_s["prob_neutral"], 4),
+            "prob_bowling": round(_s["prob_bowling"], 4),
+            "exp_run_rate": _s["exp_run_rate"],
+            "exp_wickets" : _s["exp_wickets"],
+            "momentum_index": _s["momentum_index"],
+        } for _s in _sf]
+        _csv_bytes = pd.DataFrame(_csv_rows).to_csv(index=False).encode()
+        _fn = f"prematch_{pm_team1}_vs_{pm_team2}.csv".replace(" ", "_")
+        st.download_button(
+            "⬇  Download Forecast CSV",
+            data=_csv_bytes, file_name=_fn, mime="text/csv",
+            use_container_width=True,
+        )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -1210,9 +2141,8 @@ elif tab_choice == "Live Match":
 # ════════════════════════════════════════════════════════════════════════════
 
 st.markdown("""
-<div class="main-footer">
-    MSc in Data Science &nbsp;·&nbsp;
-    Session-Based Momentum Prediction in Test Cricket<br>
-    Data Source: Cricsheet Ball-by-Ball (2005–2024)
+<div class="footer">
+    MSc Data Science &nbsp;·&nbsp; Session-Based Momentum Prediction in Test Cricket
+    &nbsp;·&nbsp; Cricsheet Ball-by-Ball Dataset 2005–2024
 </div>
 """, unsafe_allow_html=True)

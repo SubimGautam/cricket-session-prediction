@@ -1,98 +1,142 @@
 # src/state_manager.py
 import sqlite3
 import json
-import time
 from pathlib import Path
 from datetime import datetime
+from typing import List, Dict, Any
 
-DB_PATH = Path("outputs/live_state.db")
+DB_PATH = Path("outputs/live_predictions.db")
+
+def get_db_connection():
+    """Get SQLite connection with row_factory for dict results."""
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(DB_PATH))
+    conn.row_factory = sqlite3.Row
+    return conn
 
 def init_db():
-    """Create tables if they don't exist."""
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS predictions (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                match_id    TEXT,
-                innings_num INTEGER,
-                session_name TEXT,
-                predicted_label INTEGER,
-                confidence  REAL,
-                features_json TEXT,
-                created_at  TEXT
-            )
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS wp_history (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                match_id    TEXT,
-                timestamp   TEXT,
-                wp_batting  REAL,
-                wp_bowling  REAL,
-                session_name TEXT
-            )
-        """)
+    """Initialize database tables if they don't exist."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Predictions log table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS predictions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            match_id TEXT NOT NULL,
+            timestamp TEXT NOT NULL,
+            innings_num INTEGER,
+            session_name TEXT,
+            label INTEGER,
+            confidence REAL,
+            prob_batting REAL,
+            prob_neutral REAL,
+            prob_bowling REAL,
+            features_json TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
+    # Win probability history table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS wp_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            match_id TEXT NOT NULL,
+            timestamp TEXT NOT NULL,
+            wp_batting REAL,
+            wp_bowling REAL,
+            session_name TEXT,
+            poll_number INTEGER,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
+    conn.commit()
+    conn.close()
 
-def save_prediction(result: dict):
-    """Persist a prediction result to SQLite."""
+def save_prediction(result: Dict[str, Any]):
+    """Save a prediction result to the database."""
     init_db()
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute("""
-            INSERT INTO predictions
-            (match_id, innings_num, session_name, predicted_label,
-             confidence, features_json, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (
-            result["match_id"],
-            result["innings_num"],
-            result["session_name"],
-            result["predicted_label"],
-            result["confidence"],
-            json.dumps(result["features"]),
-            datetime.utcnow().isoformat(),
-        ))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        INSERT INTO predictions (
+            match_id, timestamp, innings_num, session_name,
+            label, confidence, prob_batting, prob_neutral,
+            prob_bowling, features_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        result["match_id"],
+        datetime.utcnow().isoformat(),
+        result.get("innings_num"),
+        result.get("session_name"),
+        result["predicted_label"],
+        result["confidence"],
+        result["prob_batting"],
+        result["prob_neutral"],
+        result["prob_bowling"],
+        json.dumps(result.get("features", {}))
+    ))
+    
+    conn.commit()
+    conn.close()
 
-def save_wp_point(match_id: str, wp_batting: float,
-                  wp_bowling: float, session_name: str):
-    """Append one WP data point — called after each prediction."""
+def save_wp_point(match_id: str, wp_batting: float, wp_bowling: float, session_name: str):
+    """Save a win probability point for trajectory tracking."""
     init_db()
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute("""
-            INSERT INTO wp_history
-            (match_id, timestamp, wp_batting, wp_bowling, session_name)
-            VALUES (?, ?, ?, ?, ?)
-        """, (match_id, datetime.utcnow().isoformat(),
-              wp_batting, wp_bowling, session_name))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Get next poll number
+    cursor.execute("SELECT COUNT(*) as count FROM wp_history WHERE match_id = ?", (match_id,))
+    poll_number = cursor.fetchone()["count"] + 1
+    
+    cursor.execute("""
+        INSERT INTO wp_history (
+            match_id, timestamp, wp_batting, wp_bowling,
+            session_name, poll_number
+        ) VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        match_id,
+        datetime.utcnow().isoformat(),
+        wp_batting,
+        wp_bowling,
+        session_name,
+        poll_number
+    ))
+    
+    conn.commit()
+    conn.close()
 
-def get_wp_history(match_id: str) -> list[dict]:
-    """Retrieve full WP trajectory for a match — for the chart."""
+def get_prediction_log(match_id: str, limit: int = 50) -> List[Dict]:
+    """Retrieve prediction history for a match."""
     init_db()
-    with sqlite3.connect(DB_PATH) as conn:
-        rows = conn.execute("""
-            SELECT timestamp, wp_batting, wp_bowling, session_name
-            FROM wp_history
-            WHERE match_id = ?
-            ORDER BY id ASC
-        """, (match_id,)).fetchall()
-    return [
-        {"timestamp": r[0], "wp_batting": r[1],
-         "wp_bowling": r[2], "session": r[3]}
-        for r in rows
-    ]
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT timestamp, innings_num, session_name, label, confidence,
+               prob_batting, prob_neutral, prob_bowling
+        FROM predictions
+        WHERE match_id = ?
+        ORDER BY created_at DESC
+        LIMIT ?
+    """, (match_id, limit))
+    
+    return [dict(row) for row in cursor.fetchall()]
 
-def get_prediction_log(match_id: str) -> list[dict]:
-    """All predictions made for a match — for the audit trail."""
+def get_wp_history(match_id: str) -> List[Dict]:
+    """Retrieve win probability history for trajectory chart."""
     init_db()
-    with sqlite3.connect(DB_PATH) as conn:
-        rows = conn.execute("""
-            SELECT innings_num, session_name, predicted_label,
-                   confidence, created_at
-            FROM predictions
-            WHERE match_id = ?
-            ORDER BY id ASC
-        """, (match_id,)).fetchall()
-    return [
-        {"innings": r[0], "session": r[1], "label": r[2],
-         "confidence": r[3], "at": r[4]}
-        for r in rows
-    ]
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT timestamp, wp_batting, wp_bowling, session_name, poll_number
+        FROM wp_history
+        WHERE match_id = ?
+        ORDER BY poll_number ASC
+    """, (match_id,))
+    
+    return [dict(row) for row in cursor.fetchall()]
